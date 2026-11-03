@@ -1,0 +1,621 @@
+REGEDIT4
+
+[HKEY_CURRENT_USER\Software\Foxit Software]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Find]
+"Option_Case"=dword:00000000
+"Option_IncBmark"=dword:00000000
+"Option_IncCom"=dword:00000000
+"Option_WholeWord"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\GlobalData]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\GlobalData\Widget]
+"HighLightBar"=dword:00000001
+"HighLight"=dword:00000001
+"HighLightColor"=dword:000fe0ff
+"ReqiredColor"=dword:00008dff
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\plugins]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\plugins\Updater]
+"UpdateMode"="1"
+"LastDay"="0604800,1364329661"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\Display]
+"bDispGrid"="0"
+"bLogicalPage"="1"
+"bActionChangeZoom"="0"
+"bUseClearType"="0"
+"dbDefScale"="1.000000"
+"nMarginSize"="8"
+"bCustomMargin"="0"
+"nFacingCount"="2"
+"bCustomFacing"="0"
+"nShowMode"="1"
+"nZoomToMode"="4"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\Documents]
+"bMultiInstance"="0"
+"bPromptCloseTabs"="1"
+"clrDocFore"="0"
+"clrDocBack"="16777215"
+"bReplaceColor"="0"
+"bTwoColor"="1"
+"bCustomColor"="0"
+"nUnit"="1"
+"bAlertFullScreen"="1"
+"AllowHideControls"="1"
+"nOpenFileMode"="0"
+"bReadmodeInBrowser"="0"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\FullScreen]
+"clrFulScreenBackColor"="0"
+"bFulScreenShowBookmark"="0"
+"bFulScreenShowScrollbar"="0"
+"bFulScreenShowStatusBar"="0"
+"bFulScreenShowTabBar"="0"
+"bFulScreenShowMenuBar"="0"
+"bFulScreenShowExitBtn"="0"
+"bFulScreenSinglePageMode"="1"
+"bFulScreenShowHandDown"="1"
+"bFulScreenIgnoreTrans"="0"
+"bFulScreenNavCtrlDi"="0"
+"TransType"=""
+"TransDi"=""
+"TransDiOpp"=""
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\General]
+"bFixedSnapShotDpi"="0"
+"nSnapShotDpi"="72"
+"bPrintUseGraphics"="0"
+"bIsCheckTextLink"="1"
+"bShowStartPage"="0"
+"bMenuExclusiveRow"="1"
+"bHandToolSelect"="1"
+"bAutoHideStauts"="1"
+"bCertifiePlugins"="1"
+"nGetWord"="1"
+"bShowTabCloseBtn"="0"
+"nTabMaxWidth"="150"
+"nMinMode"="0"
+"CurrentTool"="Hand"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\History]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\History\Options]
+"bUseHistoryOpening"="1"
+"bLastSession"="0"
+"nSaveMaxSize"="50"
+"nRecentlyUseListSize"="4"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\Internet]
+"bHideQuickSearchBar"="0"
+"bDisabledQuickSearch"="0"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\InternetSearch]
+"bHideQuickSearchBar"=dword:00000000
+"bDisabledQuickSearch"=dword:00000000
+"bHideAskBtn"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\Languages]
+"langid"="49001d"
+"nChooseLan"="0"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\Others]
+"bDisableSharePointFeatures"=dword:00000000
+"bEnableJS"="1"
+"nPreferItem"=""
+"nAdvertiseId"="0"
+"bShowAD"="1"
+"nFileSaveType"="0"
+"csFileSavePLGEXT"="(null)"
+"nFileSaveWhat"="0"
+"bCheckExpireDate"="1"
+"bCheckRegister"="1"
+"bCheckStandardSave"="1"
+"bCheckStandardLimited"="1"
+"bCheckStandardFeature"="1"
+"bSeparateMenubar"="1"
+"bShowXFAWarn"="1"
+"bShowWelcomeDlg"="0"
+"bShowTraileDlg"="1"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\Readering]
+"nMsaaMode"="2"
+"nMsaaPageCount"="50"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\Registration]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\TextView]
+"nTextSaveMode"="0"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\TextView\FindInfo]
+"bTextAutoWidth"="0"
+"bMatchWholeWord"="0"
+"bSearchDown"="1"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\TextView\ReplaceInfo]
+"bTextAutoWidth"="0"
+"bMatchWholeWord"="0"
+"bSearchDown"="1"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Preferences\TextView\TextWidthInfo]
+"nTextWidth"="78"
+"bTextKeepColumn"="1"
+"bTextAutoRotate"="1"
+"bTextAutoWidth"="1"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\SnapShot]
+"CheckSnapShot"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\StartPage]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\StartPage\Advertisement]
+"bShowAdvertise"=dword:00000000
+"nSelIndex"=dword:ffffffff
+"csVersion"="c0.0"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows]
+"bShowStatusBar"=dword:00000001
+"DefaultStyle"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\BaseControlBar-59626]
+"IsVisible"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\ControlBar-59626]
+"ID"=dword:0000e8ea
+"RectRecentFloat"=hex:30,00,00,00,43,00,00,00,1f,01,00,00,37,02,00,00
+"RectRecentDocked"=hex:00,00,00,00,00,00,00,00,ef,00,00,00,f4,01,00,00
+"RecentFrameAlignment"=dword:00001000
+"RecentRowIndex"=dword:00000000
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:00007fff
+"PinState"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\ControlBars-Summary]
+"Bars"=dword:00000000
+"ScreenCX"=dword:00000780
+"ScreenCY"=dword:00000438
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\DockManager-128]
+"DockingCBAndSliders"=hex:00,00,00,00,02,00,00,00,00,00,00,00,00,40,00,00,00,\
+  00,00,00,ff,ff,ff,ff,ff,ff,ff,ff,00,00,00,00,00,00,00,00,04,00,00,00,04,00,\
+  00,00,00,00,00,00,02,00,00,10,04,00,00,00,01,00,00,00,00,00,00,00,00,00,00,\
+  00,ea,e8,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,01,00,00,00,\
+  ea,e8,00,00,01,00,00,00,ea,e8,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\MenuBar]
+"ID"=dword:0000e806
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:00,00,00,00,00,00,00,00,7d,05,00,00,19,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000000
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:00007fff
+"PinState"=dword:00000000
+"IsVisible"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar\Basic]
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:00,00,00,00,19,00,00,00,51,01,00,00,3d,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000001
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:000001ee
+"PinState"=dword:00000000
+"IsVisible"=dword:00000001
+"IsDefaultLayout"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar\Comments]
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:00,00,00,00,3d,00,00,00,74,01,00,00,61,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000007
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:00000169
+"PinState"=dword:00000000
+"IsVisible"=dword:00000000
+"IsDefaultLayout"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar\docuSign]
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:ce,02,00,00,19,00,00,00,07,03,00,00,3d,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000001
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:0000002e
+"PinState"=dword:00000000
+"IsVisible"=dword:00000001
+"IsDefaultLayout"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar\Drawing]
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:00,00,00,00,3d,00,00,00,a1,01,00,00,61,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000008
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:00000196
+"PinState"=dword:00000000
+"IsVisible"=dword:00000000
+"IsDefaultLayout"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar\Edit]
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:00,00,00,00,3d,00,00,00,d4,00,00,00,61,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000002
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:000000c9
+"PinState"=dword:00000000
+"IsVisible"=dword:00000000
+"IsDefaultLayout"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar\Favorite]
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:00,00,00,00,3d,00,00,00,6c,01,00,00,61,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000003
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:00000161
+"PinState"=dword:00000000
+"IsVisible"=dword:00000000
+"IsDefaultLayout"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar\Format]
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:00,00,00,00,3d,00,00,00,66,02,00,00,61,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000004
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:0000025b
+"PinState"=dword:00000000
+"IsVisible"=dword:00000000
+"IsDefaultLayout"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar\Forms]
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:00,00,00,00,3d,00,00,00,79,00,00,00,61,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000006
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:0000006e
+"PinState"=dword:00000000
+"IsVisible"=dword:00000000
+"IsDefaultLayout"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar\Property]
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:00,00,00,00,3d,00,00,00,4c,00,00,00,61,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000005
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:0000003d
+"PinState"=dword:00000000
+"IsVisible"=dword:00000000
+"IsDefaultLayout"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar\Reading]
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:00,00,00,00,3d,00,00,00,bc,00,00,00,61,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000009
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:000000b1
+"PinState"=dword:00000000
+"IsVisible"=dword:00000000
+"IsDefaultLayout"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar\ShowHideToolBarFind]
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:51,01,00,00,19,00,00,00,58,02,00,00,3d,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000001
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:000000f8
+"PinState"=dword:00000000
+"IsVisible"=dword:00000001
+"IsDefaultLayout"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\Toolbar\View]
+"RectRecentFloat"=hex:0a,00,00,00,0a,00,00,00,6e,00,00,00,6e,00,00,00
+"RectRecentDocked"=hex:58,02,00,00,19,00,00,00,c4,02,00,00,3d,00,00,00
+"RecentFrameAlignment"=dword:00002000
+"RecentRowIndex"=dword:00000001
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:000001b9
+"PinState"=dword:00000000
+"IsVisible"=dword:00000001
+"IsDefaultLayout"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\ToolBarButtons]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\ToolBarButtons\Basic]
+"Email"=dword:00000000
+"ChangeToolbarMode"=dword:00000000
+"Annot"=dword:00000000
+"Snapshot"=dword:00000000
+"Validate all signatures"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\ToolBarButtons\ShowHideToolBarFind]
+"ASK Tool"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\ToolBarButtons\View]
+"GoBack"=dword:00000000
+"GoForward"=dword:00000000
+"MarqueeZoom"=dword:00000000
+"Loupe Tool"=dword:00000000
+"Magnifier Tool"=dword:00000000
+"FitVisible"=dword:00000000
+"ScaleIn"=dword:00000000
+"ScaleOut"=dword:00000000
+"RotateCW"=dword:00000000
+"RotateCCW"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\Toolbars\ToolbarParameters]
+"Tooltips"=dword:00000001
+"ShortcutKeys"=dword:00000001
+"LargeIcons"=dword:00000000
+"MenuAnimation"=dword:00000000
+"RecentlyUsedMenus"=dword:00000000
+"MenuShadows"=dword:00000000
+"ShowAllMenusAfterDelay"=dword:00000001
+"Look2000"=dword:00000001
+"CommandsUsage"=hex:00,00,00,00,00,00
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\UIVersion]
+"Major"=dword:0000000b
+"Minor"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 5.0\Windows\WindowPlacement]
+"MainWindowRect"=hex:2c,00,00,00,2c,00,00,00,cc,05,00,00,2f,03,00,00
+"Flags"=dword:00000000
+"ShowCmd"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Find]
+"Option_Case"=dword:00000000
+"Option_IncBmark"=dword:00000000
+"Option_IncCom"=dword:00000000
+"Option_WholeWord"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\GlobalData]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\GlobalData\Widget]
+"HighLight"=dword:00000001
+"HighLightBar"=dword:00000001
+"HighLightColor"=dword:00ffe4dd
+"ReqiredColor"=dword:00ffb0b0
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\plugins]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\plugins\Updater]
+"IsAutoUpdater"="1"
+"UpdateMode"="0"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\Display]
+"bActionChangeZoom"="0"
+"bCustomFacing"="0"
+"bCustomMargin"="0"
+"bDispGrid"="0"
+"bLogicalPage"="1"
+"bUseClearType"="0"
+"csNavigationTab"="ShowHideThumbnails"
+"dbDefScale"="1.000000"
+"nFacingCount"="2"
+"nMarginSize"="8"
+"nShowMode"="1"
+"nZoomToMode"="4"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\Documents]
+"AllowHideControls"="1"
+"bAlertFullScreen"="1"
+"bCustomColor"="0"
+"bMultiInstance"="0"
+"bPromptCloseTabs"="1"
+"bReadmodeInBrowser"="0"
+"bReplaceColor"="0"
+"bTwoColor"="1"
+"clrDocBack"="16777215"
+"clrDocFore"="0"
+"nOpenFileMode"="0"
+"nUnit"="1"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\FullScreen]
+"bFulScreenIgnoreTrans"="0"
+"bFulScreenNavCtrlDi"="0"
+"bFulScreenShowBookmark"="0"
+"bFulScreenShowExitBtn"="0"
+"bFulScreenShowHandDown"="1"
+"bFulScreenShowMenuBar"="0"
+"bFulScreenShowScrollbar"="0"
+"bFulScreenShowStatusBar"="0"
+"bFulScreenShowTabBar"="0"
+"bFulScreenSinglePageMode"="1"
+"clrFulScreenBackColor"="0"
+"TransDi"=""
+"TransDiOpp"=""
+"TransType"=""
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\General]
+"bAutoHideStauts"="0"
+"bCertifiePlugins"="1"
+"bFixedSnapShotDpi"="0"
+"bHandToolSelect"="1"
+"bIsCheckTextLink"="1"
+"bMenuExclusiveRow"="1"
+"bPrintUseGraphics"="0"
+"bShowAdvertisement"="1"
+"bShowStartPage"="1"
+"bShowTabCloseBtn"="0"
+"CurrentTool"="Hand"
+"nGetWord"="1"
+"nMinMode"="0"
+"nSnapShotDpi"="72"
+"nTabMaxWidth"="150"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\History]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\History\Options]
+"bLastSession"="0"
+"bUseHistoryOpening"="1"
+"nRecentlyUseListSize"="4"
+"nSaveMaxSize"="50"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\IeAssociation]
+"bShowInbrowser"="1"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\Internet]
+"bDisabledQuickSearch"="0"
+"bHideQuickSearchBar"="0"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\InternetSearch]
+"bDisabledQuickSearch"=dword:00000000
+"bHideAskBtn"=dword:00000001
+"bHideQuickSearchBar"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\Languages]
+"langid"="49127d"
+"nChooseLan"="0"
+"nShowAllLanguage"="1"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\Others]
+"bCheckExpireDate"="0"
+"bCheckRegister"="0"
+"bCheckStandardFeature"="1"
+"bCheckStandardLimited"="1"
+"bCheckStandardSave"="1"
+"bEnableJS"="1"
+"bEnableSharePointFeatures"=dword:00000000
+"bSeparateMenubar"="1"
+"bShowAD"="0"
+"bShowOpenURLMessageBox"="0"
+"bShowTraileDlg"="0"
+"bShowWelcomeDlg"="0"
+"bShowXFAWarn"="0"
+"csFileSavePLGEXT"="(null)"
+"csInitialOpenDir"=""
+"nAdvertiseId"="0"
+"nFileSaveType"="0"
+"nFileSaveWhat"="0"
+"nPreferItem"=""
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\PrevThumAssociation]
+"nPrevHndlrInc"="1"
+"nThumHndlrInc"="1"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\Readering]
+"nMsaaMode"="2"
+"nMsaaPageCount"="50"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\Registration]
+"bShowRegisterDlg"="0"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Preferences\Trust Manager]
+"csSitesDateManage"=""
+"nSitesAccessRight"="3"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\RecentFiles]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Ribbon]
+"IsRibbonMinimize"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Ribbon\Ribbon Quick Access Toolbar]
+"0"="File_Main_Open"
+"1"="File_Main_Save"
+"2"="File_Main_Print"
+"3"="Share_Sendto_Email"
+"4"="Home_Create_FromBlankPage"
+"5"="Button_Undo"
+"6"="Button_Redo"
+"ShowQATOnBottom"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\SnapShot]
+"CheckSnapShot"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\StartPage]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\StartPage\Advertisement]
+"bShowAdvertise"=dword:00000000
+"csVersion"="c0.0"
+"nSelIndex"=dword:ffffffff
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\TextView]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\TextView\FindInfo]
+"bMatchWholeWord"="0"
+"bSearchDown"="1"
+"bTextAutoWidth"="0"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\TextView\ReplaceInfo]
+"bMatchWholeWord"="0"
+"bSearchDown"="1"
+"bTextAutoWidth"="0"
+"nSaveType"="0"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\TextView\TextWidthInfo]
+"bTextAutoRotate"="1"
+"bTextAutoWidth"="1"
+"bTextKeepColumn"="1"
+"nTextWidth"="78"
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Windows]
+"bShowStatusBar"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Windows\BaseControlBar-59626]
+"IsVisible"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Windows\ControlBar-59626]
+"ID"=dword:0000e8ea
+"IsFloating"=dword:00000000
+"MRUWidth"=dword:00007fff
+"PinState"=dword:00000000
+"RecentFrameAlignment"=dword:00001000
+"RecentRowIndex"=dword:00000000
+"RectRecentDocked"=hex:00,00,00,00,00,00,00,00,ef,00,00,00,f4,01,00,00
+"RectRecentFloat"=hex:9a,00,00,00,b0,00,00,00,89,01,00,00,a4,02,00,00
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Windows\ControlBars-Summary]
+"Bars"=dword:00000000
+"ScreenCX"=dword:00000780
+"ScreenCY"=dword:00000438
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Windows\DockManager-128]
+"DockingCBAndSliders"=hex:00,00,00,00,02,00,00,00,00,00,00,00,00,40,00,00,00,\
+  00,00,00,ff,ff,ff,ff,ff,ff,ff,ff,00,00,00,00,00,00,00,00,05,00,00,00,05,00,\
+  00,00,00,00,00,00,02,00,00,10,05,00,00,00,01,00,00,00,00,00,00,00,00,00,00,\
+  00,ea,e8,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,01,00,00,00,\
+  ea,e8,00,00,01,00,00,00,ea,e8,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Windows\Toolbars]
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Windows\Toolbars\ToolbarParameters]
+"CommandsUsage"=hex:00,00,00,00,00,00
+"LargeIcons"=dword:00000000
+"Look2000"=dword:00000001
+"MenuAnimation"=dword:00000000
+"MenuShadows"=dword:00000000
+"RecentlyUsedMenus"=dword:00000001
+"ShortcutKeys"=dword:00000001
+"ShowAllMenusAfterDelay"=dword:00000001
+"Tooltips"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Windows\UIVersion]
+"Major"=dword:0000000b
+"Minor"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Foxit Software\Foxit Reader 6.0\Windows\WindowPlacement]
+"Flags"=dword:00000000
+"MainWindowRect"=hex:08,01,00,00,95,00,00,00,a8,06,00,00,8d,03,00,00
+"ShowCmd"=dword:00000001
