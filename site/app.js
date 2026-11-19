@@ -267,6 +267,8 @@ function sanitize(data, useFallback = true) {
     birthPlace: cleanLine(source.birthPlace, 60),
     hometown: cleanLine(source.hometown, 60),
     foot: cleanLine(source.foot, 20),
+    naturalFoot: cleanLine(source.naturalFoot, 20),
+    teamLogo: PHOTO_PATH.test(String(source.teamLogo ?? "").trim()) ? String(source.teamLogo).trim() : "",
     idol: cleanLine(source.idol, 40),
     motto: cleanLine(source.motto, 80),
     bio: cleanBlock(source.bio, 2000),
@@ -493,6 +495,20 @@ function cupSVG() {
   </svg>`;
 }
 
+function teamLogoHTML(person) {
+  if (!person.teamLogo) return "";
+  const team = person.team || "Kulüp";
+  return `<figure class="club-mark"><img src="${esc(person.teamLogo)}" alt="${esc(team)} logosu" width="120" height="120" decoding="async" loading="lazy"></figure>`;
+}
+
+function footNoteHTML(person) {
+  const bits = [];
+  if (person.naturalFoot) bits.push(`Doğal ayak: ${person.naturalFoot} (solak)`);
+  if (person.foot) bits.push(`Sahada: ${person.foot}`);
+  if (!bits.length) return "";
+  return `<p class="pitch-foot">${esc(bits.join(" · "))}</p>`;
+}
+
 function shirtSVG(person) {
   const name = shirtName(person);
   const number = /^\d{1,2}$/.test(person.number) ? person.number : "";
@@ -627,12 +643,13 @@ function renderFutbolcu() {
       </section>
       <div class="futbol-kit-band">
         <div class="futbol-kit-main">
+          ${teamLogoHTML(profile)}
           ${shirtSVG(profile)}
           <div class="pitch-card pitch-card-inline">
             <h2>Mevki</h2>
             ${pitchSVG(profile)}
             <p class="pitch-label">${esc(profile.position || "Mevki seçilmedi")}</p>
-            ${profile.foot ? `<p class="pitch-foot">Güçlü ayak: ${esc(profile.foot)}</p>` : ""}
+            ${footNoteHTML(profile)}
           </div>
         </div>
         <div class="prose futbol-style">${richText(profile.style)}</div>
@@ -744,8 +761,10 @@ function editorHTML() {
       <div class="form-grid">
         <label class="field" for="f-number"><span>Forma numarası</span><input id="f-number" inputmode="numeric" maxlength="2" value="${esc(profile.number)}"></label>
         <label class="field" for="f-position"><span>Mevki</span><input id="f-position" list="positions" value="${esc(profile.position)}" maxlength="40"></label>
-        ${field("f-team", "Takım", profile.team, "wide")}
-        <label class="field" for="f-foot"><span>Güçlü ayak</span><input id="f-foot" list="feet" value="${esc(profile.foot)}" maxlength="20"></label>
+        ${field("f-team", "Takım", profile.team)}
+        ${field("f-team-logo", "Kulüp logosu", profile.teamLogo || "", "wide")}
+        <label class="field" for="f-natural-foot"><span>Doğal ayak</span><input id="f-natural-foot" list="feet" value="${esc(profile.naturalFoot || "")}" maxlength="20"></label>
+        <label class="field" for="f-foot"><span>Sahada kullanılan ayak</span><input id="f-foot" list="feet" value="${esc(profile.foot)}" maxlength="20"></label>
         <label class="field" for="f-kit"><span>Forma rengi</span><input id="f-kit" type="color" value="${esc(profile.kit)}"></label>
         <label class="field" for="f-kit-ink"><span>Forma yazı rengi</span><input id="f-kit-ink" type="color" value="${esc(profile.kitInk)}"></label>
       </div>
@@ -869,6 +888,8 @@ function readForm(useFallback = false) {
     number: value("f-number"),
     position: value("f-position"),
     team: value("f-team"),
+    teamLogo: value("f-team-logo"),
+    naturalFoot: value("f-natural-foot"),
     foot: value("f-foot"),
     kit: value("f-kit"),
     kitInk: value("f-kit-ink"),
