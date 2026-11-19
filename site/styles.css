@@ -1013,7 +1013,11 @@ body.is-home.scene-kisi .hint { opacity: 1; }
 }
 
 .askf-block > .kpi-bento {
-  margin: 0.35rem 0 1.15rem;
+  margin: 0.35rem 0 1rem;
+}
+
+.profile-facts-strip {
+  margin: 0 0 1.1rem;
 }
 
 .profile-facts-wrap h2 {
@@ -1022,6 +1026,7 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   letter-spacing: 0.02em;
 }
 
+.profile-facts-wrap .facts,
 .profile-overview .facts {
   border-radius: 14px;
   padding: 0.15rem 0;

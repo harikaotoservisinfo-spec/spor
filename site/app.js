@@ -1498,6 +1498,7 @@ function askfBlockHTML(person) {
   return `<section class="group askf-block stats-dashboard">
     ${url ? `<p class="stats-source-link-row"><a class="stats-source-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Oyuncu profili</a></p>` : ""}
     ${askfTotalsHTML(askf)}
+    ${profileFactsStripHTML(person)}
     <nav class="stats-jump" aria-label="İstatistik bölümleri">
       <a href="#askf-sezonlar">Sezonlar</a>
     </nav>
@@ -1505,13 +1506,12 @@ function askfBlockHTML(person) {
   </section>`;
 }
 
-function profileOverviewSectionHTML(person) {
-  return `<section class="group profile-overview" id="profil-ozet">
-    <div class="profile-facts-wrap">
-      <h2>Profil kartları</h2>
-      ${factsHTML(person.stats)}
-    </div>
-  </section>`;
+function profileFactsStripHTML(person) {
+  if (!person.stats?.length) return "";
+  return `<div class="profile-facts-wrap profile-facts-strip" id="profil-ozet">
+    <h2>Profil kartları</h2>
+    ${factsHTML(person.stats)}
+  </div>`;
 }
 
 function renderIstatistikler() {
@@ -1519,11 +1519,12 @@ function renderIstatistikler() {
   const heroBand = visual
     ? `<div class="persona-hero persona-hero-cup" style="--persona-hero:url('${esc(visual.file)}')" role="img" aria-label="${esc(visual.alt)}"></div>`
     : "";
+  const askfBlock = askfBlockHTML(profile);
+  const factsFallback = !askfBlock ? `<section class="group profile-overview">${profileFactsStripHTML(profile)}</section>` : "";
   return chapterFrame(CHAPTERS[2], `
     ${heroBand}
     <div class="persona-sheet persona-stats">
-      ${askfBlockHTML(profile)}
-      ${profileOverviewSectionHTML(profile)}
+      ${askfBlock || factsFallback}
     </div>
   `, "article-persona article-stats");
 }
