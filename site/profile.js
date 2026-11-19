@@ -18,8 +18,15 @@ window.SAHA_DEFAULT = {
   photos: [
     {
       file: "photos/kuzey-portre.png",
+      chapter: "kisi",
       alt: "Kuzey Akıncı, yeşil-siyah antrenman ceketiyle pistte",
       caption: "Pistte"
+    },
+    {
+      file: "photos/kuzey-futbolcu.png",
+      chapter: "futbolcu",
+      alt: "Kuzey Akıncı, sahada top sürerken",
+      caption: "Sahada"
     }
   ],
   facts: [],

@@ -376,6 +376,13 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   object-position: center 18%;
 }
 
+.portrait.action img,
+.portrait.hero.action img {
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: center 42%;
+}
+
 .portrait.kit-shot {
   margin-bottom: 1rem;
 }
@@ -661,6 +668,10 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   will-change: transform;
 }
 
+.bg-slide[data-bg="futbolcu"] .bg-ken {
+  background-position: 50% 42%;
+}
+
 .bg-slide.is-on .bg-ken {
   animation: ken-burns 14s ease-out forwards;
 }
@@ -936,6 +947,8 @@ body.is-home .menu.menu-drawer a {
 
 .row.cols-3 { grid-template-columns: 5.2rem 1fr 1.1fr auto; }
 
+.row.cols-4 { grid-template-columns: minmax(0, 1.4fr) 1fr 1fr 5.5rem auto; }
+
 .row button, .add {
   border: 0;
   background: transparent;
@@ -960,7 +973,7 @@ body.is-home .menu.menu-drawer a {
 .noscript { position: relative; z-index: 3; padding: 2rem; }
 
 @media (max-width: 800px) {
-  .layout, .split, .form-grid, .row, .row.cols-3 { grid-template-columns: 1fr; }
+  .layout, .split, .form-grid, .row, .row.cols-3, .row.cols-4 { grid-template-columns: 1fr; }
   .wide { grid-column: auto; }
   .rail { display: none; }
   .panel { padding: 20vh 7vw 12vh; }

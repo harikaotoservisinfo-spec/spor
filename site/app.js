@@ -30,7 +30,7 @@ const ROW_FIELDS = {
   honours: ["year", "title", "detail"],
   values: ["title", "text"],
   dreams: ["title", "text"],
-  photos: ["file", "alt", "caption"]
+  photos: ["file", "alt", "caption", "chapter"]
 };
 
 const PHOTO_PATH = /^photos\/[a-z0-9._-]+\.(png|jpe?g|webp)$/i;
@@ -42,7 +42,8 @@ const PLACEHOLDERS = {
   title: "Ad",
   detail: "Not",
   text: "Cümle",
-  file: "photos/dosya.png"
+  file: "photos/dosya.png",
+  chapter: "kisi"
 };
 
 const DEFAULT = window.SAHA_DEFAULT;
@@ -80,16 +81,43 @@ function cleanPhotos(list, max = 24) {
   return list.slice(0, max).map((item) => {
     const file = String(item?.file ?? "").trim();
     if (!PHOTO_PATH.test(file)) return null;
+    let chapter = cleanLine(item?.chapter, 20).toLocaleLowerCase("tr");
+    if (!CHAPTERS.some((ch) => ch.id === chapter)) {
+      if (file.includes("portre")) chapter = "kisi";
+      else if (file.includes("futbolcu")) chapter = "futbolcu";
+      else chapter = "";
+    }
     return {
       file,
       alt: cleanLine(item?.alt, 120, "Fotoğraf"),
-      caption: cleanLine(item?.caption, 120)
+      caption: cleanLine(item?.caption, 120),
+      chapter
     };
   }).filter(Boolean);
 }
 
+function mergePhotos(list) {
+  const defaults = cleanPhotos(DEFAULT.photos || []);
+  if (!list.length) return defaults;
+  const known = new Set(list.map((photo) => photo.file));
+  const merged = [...list];
+  defaults.forEach((photo) => {
+    if (!known.has(photo.file)) merged.push(photo);
+  });
+  return merged;
+}
+
+function chapterPhoto(person, id) {
+  const photos = person.photos || [];
+  const hit = photos.find((photo) => photo.chapter === id);
+  if (hit) return hit;
+  const index = { kisi: 0, futbolcu: 1, kupalar: 2, elci: 3, projeler: 4 }[id];
+  if (index !== undefined && photos[index]) return photos[index];
+  return null;
+}
+
 function heroPhoto(person) {
-  return person.photos?.[0] || null;
+  return chapterPhoto(person, "kisi");
 }
 
 function photoFigure(photo, className = "portrait") {
@@ -142,10 +170,7 @@ function sanitize(data, useFallback = true) {
     style: cleanBlock(source.style, 800),
     kit: safeColor(source.kit, "#f3f1ea"),
     kitInk: safeColor(source.kitInk, "#142018"),
-    photos: (() => {
-      const list = cleanPhotos(source.photos);
-      return list.length ? list : cleanPhotos(DEFAULT.photos || []);
-    })(),
+    photos: mergePhotos(cleanPhotos(source.photos)),
     facts: cleanList(source.facts, ["label", "value"], { label: 40, value: 80 }),
     stats: cleanList(source.stats, ["label", "value"], { label: 40, value: 20 }),
     honours: cleanList(source.honours, ["year", "title", "detail"], { year: 12, title: 60, detail: 180 }),
@@ -211,8 +236,7 @@ function applyProfile(person) {
 }
 
 function chapterBgFile(id, person) {
-  if (id === "kisi") return heroPhoto(person)?.file || "";
-  return "";
+  return chapterPhoto(person, id)?.file || "";
 }
 
 function titleMarkup(title) {
@@ -432,7 +456,7 @@ function renderKisi() {
   if (profile.city) bits.push(profile.city);
   if (profile.idol) bits.push(`Örnek aldığı oyuncu: ${profile.idol}.`);
   const lede = bits.length ? `<p class="lede">${esc(bits.join(" "))}</p>` : "";
-  const hero = heroPhoto(profile);
+  const hero = chapterPhoto(profile, "kisi");
   const lead = hero ? `<div class="article-photo">${photoFigure(hero, "portrait hero")}</div>` : "";
   return chapterFrame(CHAPTERS[0], `
     ${lead}
@@ -458,7 +482,10 @@ function renderFutbolcu() {
   const stats = profile.stats.length
     ? `<div class="stats">${profile.stats.map((stat) => `<div class="stat"><span>${esc(stat.label)}</span><strong>${esc(stat.value)}</strong></div>`).join("")}</div>`
     : `<p class="empty">Sezon rakamları henüz yok.</p><p><button type="button" class="textbtn" data-action="edit" data-focus="add-stats">Rakam ekle</button></p>`;
+  const action = chapterPhoto(profile, "futbolcu");
+  const lead = action ? `<div class="article-photo">${photoFigure(action, "portrait hero action")}</div>` : "";
   return chapterFrame(CHAPTERS[1], `
+    ${lead}
     <p class="lede">${esc(bits.join(" · "))}</p>
     <div class="layout">
       <div>
@@ -469,7 +496,7 @@ function renderFutbolcu() {
         </section>
       </div>
       <div class="kit-col">
-        ${(() => { const h = heroPhoto(profile); return h ? photoFigure(h, "portrait kit-shot") : ""; })()}
+        ${action ? photoFigure(action, "portrait kit-shot action") : ""}
         ${shirtSVG(profile)}
         <div class="pitch-card">
           <h2>Mevki</h2>
@@ -541,7 +568,8 @@ function area(id, label, value) {
 
 function rowHTML(keys, item = {}) {
   const inputs = keys.map((key) => `<input data-k="${key}" placeholder="${esc(PLACEHOLDERS[key] || key)}" value="${esc(item[key] || "")}" maxlength="180">`).join("");
-  return `<div class="row${keys.length > 2 ? " cols-3" : ""}">${inputs}<button type="button" data-action="remove-row">Sil</button></div>`;
+  const cols = keys.length > 3 ? " cols-4" : keys.length > 2 ? " cols-3" : "";
+  return `<div class="row${cols}">${inputs}<button type="button" data-action="remove-row">Sil</button></div>`;
 }
 
 function rowsHTML(name, items) {
