@@ -1437,7 +1437,18 @@ function cupSVG() {
 function teamLogoHTML(person) {
   if (!person.teamLogo) return "";
   const team = person.team || "Kulüp";
-  return `<figure class="club-mark"><img src="${esc(person.teamLogo)}" alt="${esc(team)} logosu" width="120" height="120" decoding="async" loading="lazy"></figure>`;
+  return `<figure class="club-mark club-mark-premium">
+    <div class="club-mark-plate">
+      <span class="club-mark-halo" aria-hidden="true"></span>
+      <div class="club-mark-emblem">
+        <img src="${esc(person.teamLogo)}" alt="${esc(team)} logosu" width="136" height="136" decoding="async" loading="lazy">
+      </div>
+    </div>
+    <figcaption class="club-mark-caption">
+      <span class="club-mark-kicker">Kulüp</span>
+      <strong class="club-mark-name">${esc(team)}</strong>
+    </figcaption>
+  </figure>`;
 }
 
 function footNoteHTML(person) {
@@ -1448,19 +1459,55 @@ function footNoteHTML(person) {
   return `<p class="pitch-foot">${esc(bits.join(" · "))}</p>`;
 }
 
+let shirtGradSerial = 0;
+
 function shirtSVG(person) {
   const name = shirtName(person);
   const number = /^\d{1,2}$/.test(person.number) ? person.number : "";
-  const size = name.length > 10 ? 12 : name.length > 8 ? 14 : 16;
-  const nameY = number ? 122 : 146;
-  return `<svg class="shirt" viewBox="0 0 228 230" role="img" aria-label="Forma, ${esc(name)}${number ? ` ${esc(number)}` : ""}">
-    <path fill="var(--kit)" d="M46 52 L76 26 L94 46 C104 58 124 58 134 46 L152 26 L182 52 L204 92 L176 108 L176 214 L52 214 L52 108 L24 92 Z"/>
-    <path fill="var(--ice)" d="M24 92 L52 108 L48 120 L16 100 Z"/>
-    <path fill="var(--ice)" d="M204 92 L176 108 L180 120 L212 100 Z"/>
-    <path d="M94 46 C104 60 124 60 134 46" fill="none" stroke="var(--ice)" stroke-width="2"/>
-    <text x="114" y="${nameY}" text-anchor="middle" fill="var(--kit-ink)" font-family="Outfit, sans-serif" font-size="${size}" letter-spacing="2">${esc(name)}</text>
-    ${number ? `<text x="114" y="176" text-anchor="middle" fill="var(--kit-ink)" font-family="Fraunces, Georgia, serif" font-size="64" font-weight="600">${esc(number)}</text>` : ""}
-  </svg>`;
+  const uid = `sg${(shirtGradSerial += 1)}`;
+  const nameSize = name.length > 10 ? 11 : name.length > 8 ? 12.5 : 14;
+  const nameY = number ? 128 : 154;
+  const label = `Forma, ${name}${number ? ` ${number}` : ""}`;
+  return `<div class="shirt-showcase">
+    <span class="shirt-showcase-glow" aria-hidden="true"></span>
+    <svg class="shirt shirt-premium" viewBox="0 0 240 292" role="img" aria-label="${esc(label)}">
+      <defs>
+        <linearGradient id="${uid}-body" x1="52" y1="20" x2="188" y2="250" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="color-mix(in srgb, var(--kit) 78%, white)"/>
+          <stop offset="45%" stop-color="var(--kit)"/>
+          <stop offset="100%" stop-color="color-mix(in srgb, var(--kit) 70%, var(--kit-ink) 12%)"/>
+        </linearGradient>
+        <linearGradient id="${uid}-yoke" x1="120" y1="28" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="color-mix(in srgb, var(--kit) 88%, white)"/>
+          <stop offset="100%" stop-color="color-mix(in srgb, var(--kit) 92%, var(--kit-ink) 4%)"/>
+        </linearGradient>
+        <linearGradient id="${uid}-ice" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="color-mix(in srgb, var(--ice) 92%, white)"/>
+          <stop offset="100%" stop-color="color-mix(in srgb, var(--ice) 65%, var(--kit-ink) 8%)"/>
+        </linearGradient>
+        <filter id="${uid}-soft" x="-20%" y="-12%" width="140%" height="130%">
+          <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000" flood-opacity="0.42"/>
+        </filter>
+        <filter id="${uid}-num" x="-15%" y="-15%" width="130%" height="130%">
+          <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="var(--kit-ink)" flood-opacity="0.22"/>
+        </filter>
+      </defs>
+      <ellipse class="shirt-floor" cx="120" cy="272" rx="72" ry="10" fill="var(--kit-ink)" opacity="0.18"/>
+      <g filter="url(#${uid}-soft)">
+        <path fill="url(#${uid}-body)" d="M48 58 L78 28 L98 50 C108 62 132 62 142 50 L162 28 L192 58 L212 98 L184 116 L184 232 L56 232 L56 116 L28 98 Z"/>
+        <path fill="url(#${uid}-yoke)" opacity="0.55" d="M78 28 L98 50 L142 50 L162 28 L152 48 L88 48 Z"/>
+        <path fill="url(#${uid}-ice)" d="M28 98 L56 116 L52 132 L20 108 Z"/>
+        <path fill="url(#${uid}-ice)" d="M212 98 L184 116 L188 132 L220 108 Z"/>
+        <path fill="none" stroke="color-mix(in srgb, var(--ice) 70%, var(--kit-ink) 10%)" stroke-width="2.2" stroke-linecap="round" d="M98 50 C108 66 132 66 142 50"/>
+        <path fill="none" stroke="color-mix(in srgb, var(--kit-ink) 12%, transparent)" stroke-width="0.7" opacity="0.65" d="M68 122 L68 220 M172 122 L172 220"/>
+        <path fill="none" stroke="color-mix(in srgb, var(--kit-ink) 8%, transparent)" stroke-width="0.6" opacity="0.5" d="M56 168 L184 168 M60 196 L180 196"/>
+        <path fill="color-mix(in srgb, var(--ice) 35%, transparent)" d="M104 50 L136 50 L132 58 L108 58 Z"/>
+        ${number ? `<text class="shirt-num" filter="url(#${uid}-num)" x="120" y="188" text-anchor="middle" fill="var(--kit-ink)" stroke="color-mix(in srgb, var(--kit-ink) 12%, white)" stroke-width="0.55" paint-order="stroke fill" font-family="Fraunces, Georgia, serif" font-size="76" font-weight="600" letter-spacing="-0.03em">${esc(number)}</text>` : ""}
+        <text class="shirt-name" x="120" y="${nameY}" text-anchor="middle" fill="var(--kit-ink)" font-family="Outfit, sans-serif" font-size="${nameSize}" font-weight="600" letter-spacing="0.32em">${esc(name)}</text>
+      </g>
+    </svg>
+    ${number ? `<p class="shirt-showcase-caption"><span class="shirt-showcase-no">${esc(number)}</span><span class="shirt-showcase-divider" aria-hidden="true"></span><span>${esc(name)}</span></p>` : ""}
+  </div>`;
 }
 
 function pitchSVG(person) {
@@ -1732,17 +1779,19 @@ function renderFutbolcu() {
         ${factsHTML(profile.stats)}
       </section>
       <div class="futbol-kit-band">
-        <div class="futbol-kit-main">
+        <aside class="futbol-kit-visual" aria-label="Forma ve kulüp">
           ${teamLogoHTML(profile)}
           ${shirtSVG(profile)}
-          <div class="pitch-card pitch-card-inline">
+          <div class="pitch-card pitch-card-inline pitch-card-kit">
             <h2>Mevki</h2>
             ${pitchSVG(profile)}
             <p class="pitch-label">${esc(profile.position || "Mevki seçilmedi")}</p>
             ${footNoteHTML(profile)}
           </div>
+        </aside>
+        <div class="futbol-kit-copy">
+          <div class="prose futbol-style futbol-style-premium">${richText(profile.style)}</div>
         </div>
-        <div class="prose futbol-style">${richText(profile.style)}</div>
       </div>
       ${personaBlocksHTML(profile.futbolBlocks)}
     </div>
