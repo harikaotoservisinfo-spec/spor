@@ -27,6 +27,12 @@ window.SAHA_DEFAULT = {
       chapter: "futbolcu",
       alt: "Kuzey Akıncı, sahada top sürerken",
       caption: "Sahada"
+    },
+    {
+      file: "photos/kuzey-projeler.jpg",
+      chapter: "projeler",
+      alt: "Kuzey Akıncı, tribünde mavi forma ile",
+      caption: "CSK tribünü"
     }
   ],
   facts: [],

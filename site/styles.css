@@ -672,6 +672,17 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   background-position: 50% 42%;
 }
 
+.bg-slide[data-bg="projeler"] .bg-ken {
+  background-position: 50% 35%;
+}
+
+.portrait.stadium img,
+.portrait.hero.stadium img {
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: center 38%;
+}
+
 .bg-slide.is-on .bg-ken {
   animation: ken-burns 14s ease-out forwards;
 }

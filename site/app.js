@@ -85,6 +85,7 @@ function cleanPhotos(list, max = 24) {
     if (!CHAPTERS.some((ch) => ch.id === chapter)) {
       if (file.includes("portre")) chapter = "kisi";
       else if (file.includes("futbolcu")) chapter = "futbolcu";
+      else if (file.includes("projeler")) chapter = "projeler";
       else chapter = "";
     }
     return {
@@ -544,7 +545,10 @@ function renderElci() {
 }
 
 function renderProjeler() {
+  const visual = chapterPhoto(profile, "projeler");
+  const lead = visual ? `<div class="article-photo">${photoFigure(visual, "portrait hero stadium")}</div>` : "";
   return chapterFrame(CHAPTERS[4], `
+    ${lead}
     <p class="lede">Bitmiş işlerin listesi değil. Kuzey Akıncı adının altında duran, süren işler.</p>
     <section class="group">${itemsHTML(profile.dreams, "İlk proje buraya yazılır.")}</section>
   `);
