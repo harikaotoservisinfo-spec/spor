@@ -4,14 +4,17 @@ window.SAHA_DEFAULT = {
   number: "",
   position: "",
   team: "",
-  city: "",
-  age: "",
+  city: "Antalya",
+  age: "15",
+  birthDate: "14 Şubat 2011",
+  birthPlace: "Muratpaşa",
+  hometown: "Yusufeli, Artvin",
   foot: "",
   idol: "",
   motto: "Yön belli. Hareket bende.",
-  bio: "Kuzey Akıncı, bir kişinin kendi sahası. Kuzey nereye bakacağını söyler. Akıncı, orada durup beklemediğini. Bu sayfa bir skor tabelası değil. Önce kişiyi koyar, sonra futbolcuyu.",
-  day: "",
-  loves: "",
+  bio: "Formasını bilen çok kişi var; Kuzey'i tanıyan daha az. Kuzey Akıncı, Yusufeli, Artvin kökenli; Muratpaşa'da doğmuş, Antalya'da ailesiyle yaşayan ve öğrenimine burada devam eden bir genç. Bu sayfa skor tabelası değil — önce insanı, sonra futbolcuyu anlatır.",
+  day: "Okul ve antrenman Antalya ritmiyle birleşir. Kısa bir gün bile planlıysa boşa gitmez.",
+  loves: "Saha, video çekimi ve tekrarlayan antrenman saati.",
   style: "Oyun fikri markanın cümlesi: önce gör, sonra akın et. Topu kazanınca acele yok. Basit pas, doğru ayak. Mevki ve takım yazılınca bu sayfa ona göre daralır.",
   kit: "#f3f1ea",
   kitInk: "#142018",
@@ -49,7 +52,39 @@ window.SAHA_DEFAULT = {
       caption: "CSK tribünü"
     }
   ],
-  facts: [],
+  facts: [
+    { label: "Doğum tarihi", value: "14 Şubat 2011" },
+    { label: "Doğum yeri", value: "Muratpaşa, Antalya" },
+    { label: "Memleket", value: "Yusufeli, Artvin" },
+    { label: "İkamet", value: "Antalya" },
+    { label: "Öğrenim", value: "Antalya" }
+  ],
+  personaBlocks: [
+    {
+      title: "Kök",
+      text: "Aslen Yusufeli, Artvin. Dağ havası ve küçük kasabanın sakin temposu, Antalya'nın gürültüsüne taşınmadan önceki ilk iz. Kuzey bu iki dünyayı bir arada taşır: memleket sakinliği, şehir hızı.",
+      chapter: "kisi",
+      align: "left"
+    },
+    {
+      title: "Aile",
+      text: "Antalya'da ailesiyle yaşıyor. Evde kararlar birlikte konuşulur; antrenman ve okul programı da aile takvimine göre oturur. Sahada yalnız görünse de, ardında hep aynı çekirdek durur.",
+      chapter: "elci",
+      align: "right"
+    },
+    {
+      title: "Öğrenim",
+      text: "Öğrenimine Antalya'da devam ediyor. Okul ile futbol aynı gün içinde paylaşılır: ders bitince top, antrenman bitince ev. Şehir onun için sadece ikamet değil; günün akışının merkezi.",
+      chapter: "projeler",
+      align: "left"
+    },
+    {
+      title: "Yaşam ritmi",
+      text: "Gün üç ayak üzerinde durur: uyku, beslenme ve hareket. Antrenman saatleri erkenden kilitlenir; maç günü daha da sadeleşir. Hızlı yaşam, disiplinli ritim ister — Kuzey bunu Antalya'da kuruyor.",
+      chapter: "futbolcu",
+      align: "right"
+    }
+  ],
   stats: [],
   honours: [],
   values: [

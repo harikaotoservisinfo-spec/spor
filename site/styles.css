@@ -430,6 +430,146 @@ body.is-home.scene-kisi .hint { opacity: 1; }
 
 .article h1 { font-size: clamp(4rem, 11vw, 7.6rem); }
 
+.article-persona {
+  width: 100%;
+  max-width: none;
+  padding-top: 7rem;
+}
+
+.article-persona > .back,
+.article-persona > .kicker,
+.article-persona > h1 {
+  width: min(1080px, calc(100% - 10vw));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.article-persona > .colophon {
+  width: min(1080px, calc(100% - 10vw));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.persona-hero {
+  width: 100%;
+  min-height: min(52vh, 520px);
+  margin: 1.2rem 0 0;
+  background:
+    linear-gradient(180deg, rgba(7, 17, 12, 0.12) 0%, rgba(7, 17, 12, 0.72) 78%, var(--bg) 100%),
+    var(--persona-hero, none) center 22% / cover no-repeat;
+}
+
+.persona-sheet {
+  width: min(1080px, calc(100% - 10vw));
+  margin: 0 auto;
+  padding: 2rem 0 1rem;
+}
+
+.persona-lede {
+  margin: 0;
+  max-width: 40rem;
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: clamp(1.2rem, 2.2vw, 1.45rem);
+  line-height: 1.5;
+}
+
+.persona-vitals {
+  margin-top: 1.8rem;
+}
+
+.persona-vitals .facts {
+  margin-top: 0;
+}
+
+.persona-etym {
+  margin-top: 2.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.persona-etym-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  max-width: 36rem;
+}
+
+.persona-etym-card span {
+  display: block;
+  color: var(--ice);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+}
+
+.persona-etym-card strong {
+  display: block;
+  margin: 0.3rem 0 0.1rem;
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 560;
+  letter-spacing: -0.04em;
+}
+
+.persona-etym-card em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.persona-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 0;
+  border-top: 1px solid var(--line);
+}
+
+.persona-row .persona-visual {
+  margin: 0;
+  min-height: 360px;
+  background: rgba(8, 16, 12, 0.35);
+}
+
+.persona-row .persona-shot {
+  margin: 0;
+  height: 100%;
+}
+
+.persona-row .persona-shot img {
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  max-height: 62vh;
+  object-fit: cover;
+  border: 0;
+  box-shadow: none;
+}
+
+.persona-row .persona-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(1.2rem, 3vw, 2.4rem);
+}
+
+.persona-row .persona-copy h2 {
+  margin: 0 0 0.8rem;
+  font-family: var(--serif);
+  font-weight: 560;
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.persona-row .persona-copy .prose {
+  margin: 0;
+  max-width: 34rem;
+}
+
+.persona-row.is-right .persona-visual { order: 2; }
+.persona-row.is-right .persona-copy { order: 1; }
+
 .lede, .prose p {
   font-weight: 300;
   font-size: 1.28rem;
@@ -1087,6 +1227,22 @@ body.is-home .menu.menu-drawer a {
     float: none;
     width: 100%;
     margin: 0 0 1.2rem;
+  }
+
+  .persona-row,
+  .persona-etym-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .persona-row.is-right .persona-visual,
+  .persona-row.is-right .persona-copy,
+  .persona-row .persona-visual,
+  .persona-row .persona-copy {
+    order: initial;
+  }
+
+  .persona-hero {
+    min-height: 40vh;
   }
   .article { width: min(1080px, calc(100% - 2.2rem)); }
   .brand-name small { display: none; }

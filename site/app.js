@@ -30,7 +30,8 @@ const ROW_FIELDS = {
   honours: ["year", "title", "detail"],
   values: ["title", "text"],
   dreams: ["title", "text"],
-  photos: ["file", "alt", "caption", "chapter"]
+  photos: ["file", "alt", "caption", "chapter"],
+  personaBlocks: ["title", "text", "chapter", "align"]
 };
 
 const PHOTO_PATH = /^photos\/[a-z0-9._-]+\.(png|jpe?g|webp)$/i;
@@ -43,7 +44,8 @@ const PLACEHOLDERS = {
   detail: "Not",
   text: "Cümle",
   file: "photos/dosya.png",
-  chapter: "kisi"
+  chapter: "kisi",
+  align: "left"
 };
 
 const DEFAULT = window.SAHA_DEFAULT;
@@ -183,6 +185,47 @@ function galleryHTML(photos) {
   return `<div class="gallery">${photos.map((photo) => photoFigure(photo, "gallery-card")).join("")}</div>`;
 }
 
+function cleanPersonaBlocks(list, max = 8) {
+  if (!Array.isArray(list)) return [];
+  const allowed = new Set(CHAPTERS.map((ch) => ch.id));
+  return list.slice(0, max).map((item) => {
+    const title = cleanLine(item?.title, 60);
+    const text = cleanBlock(item?.text, 1200);
+    const chapter = cleanLine(item?.chapter, 20);
+    const align = cleanLine(item?.align, 10).toLowerCase() === "right" ? "right" : "left";
+    if (!title || !text) return null;
+    return {
+      title,
+      text,
+      chapter: allowed.has(chapter) ? chapter : "",
+      align
+    };
+  }).filter(Boolean);
+}
+
+function mergeFacts(list) {
+  const defaults = cleanList(DEFAULT.facts || [], ["label", "value"], { label: 40, value: 80 });
+  if (!list.length) return defaults;
+  const labels = new Set(list.map((fact) => fact.label));
+  const merged = [...list];
+  defaults.forEach((fact) => {
+    if (fact.label && !labels.has(fact.label)) merged.push(fact);
+  });
+  return merged;
+}
+
+function mergePersonaBlocks(list) {
+  const defaults = cleanPersonaBlocks(DEFAULT.personaBlocks || []);
+  if (!list.length) return defaults;
+  const known = new Set(list.map((block) => `${block.title}\n${block.align}`));
+  const merged = [...list];
+  defaults.forEach((block) => {
+    const key = `${block.title}\n${block.align}`;
+    if (!known.has(key)) merged.push(block);
+  });
+  return merged;
+}
+
 function cleanList(list, keys, limits, max = 12) {
   if (!Array.isArray(list)) return [];
   return list.slice(0, max).map((item) => {
@@ -208,6 +251,9 @@ function sanitize(data, useFallback = true) {
     team: cleanLine(source.team, 60),
     city: cleanLine(source.city, 40),
     age: cleanLine(source.age, 12),
+    birthDate: cleanLine(source.birthDate, 40),
+    birthPlace: cleanLine(source.birthPlace, 60),
+    hometown: cleanLine(source.hometown, 60),
     foot: cleanLine(source.foot, 20),
     idol: cleanLine(source.idol, 40),
     motto: cleanLine(source.motto, 80),
@@ -220,7 +266,8 @@ function sanitize(data, useFallback = true) {
     youtube: safeSocialUrl(source.youtube, "youtube") || (useFallback ? safeSocialUrl(DEFAULT.youtube, "youtube") : ""),
     instagram: safeSocialUrl(source.instagram, "instagram") || (useFallback ? safeSocialUrl(DEFAULT.instagram, "instagram") : ""),
     photos: mergePhotos(cleanPhotos(source.photos)),
-    facts: cleanList(source.facts, ["label", "value"], { label: 40, value: 80 }),
+    personaBlocks: mergePersonaBlocks(cleanPersonaBlocks(source.personaBlocks)),
+    facts: mergeFacts(cleanList(source.facts, ["label", "value"], { label: 40, value: 80 })),
     stats: cleanList(source.stats, ["label", "value"], { label: 40, value: 20 }),
     honours: cleanList(source.honours, ["year", "title", "detail"], { year: 12, title: 60, detail: 180 }),
     values: cleanList(source.values, ["title", "text"], { title: 40, text: 240 }),
@@ -485,8 +532,9 @@ function optionalBlock(title, text, empty, focus) {
   return `<section class="group"><h2>${esc(title)}</h2>${body}</section>`;
 }
 
-function chapterFrame(chapter, inner) {
-  return `<article class="article">
+function chapterFrame(chapter, inner, extraClass = "") {
+  const extra = extraClass ? ` ${extraClass}` : "";
+  return `<article class="article${extra}">
     <a class="back" href="#">← Saha</a>
     <p class="kicker">${chapter.index} · ${esc(chapter.kicker)}</p>
     <h1>${esc(chapter.title)}</h1>
@@ -495,31 +543,59 @@ function chapterFrame(chapter, inner) {
   </article>`;
 }
 
+function personaVisual(block) {
+  if (!block.chapter) return "";
+  const photo = chapterPhoto(profile, block.chapter);
+  if (!photo) return "";
+  return `<div class="persona-visual">${photoFigure(photo, "persona-shot")}</div>`;
+}
+
+function personaBlocksHTML(blocks) {
+  if (!blocks.length) return `<p class="empty">Kişi bölümleri düzenle menüsünden yazılır.</p>`;
+  return blocks.map((block) => {
+    const visual = personaVisual(block);
+    const side = block.align === "right" ? "is-right" : "is-left";
+    return `<section class="persona-row ${side}">
+      ${visual}
+      <div class="persona-copy">
+        <h2>${esc(block.title)}</h2>
+        <div class="prose">${richText(block.text)}</div>
+      </div>
+    </section>`;
+  }).join("");
+}
+
 function renderKisi() {
-  const etymology = isBrandName(profile) ? `<div class="split">
-      <div><span>Ad</span><strong>Kuzey</strong><em>Yön</em></div>
-      <div><span>Soyad</span><strong>Akıncı</strong><em>Hareket</em></div>
-    </div>` : "";
-  const bits = [];
-  if (profile.age) bits.push(`${profile.age} yaşında.`);
-  if (profile.city) bits.push(profile.city);
-  if (profile.idol) bits.push(`Örnek aldığı oyuncu: ${profile.idol}.`);
-  const lede = bits.length ? `<p class="lede">${esc(bits.join(" "))}</p>` : "";
   const hero = chapterPhoto(profile, "kisi");
-  const lead = hero ? `<div class="article-photo">${photoFigure(hero, "portrait hero")}</div>` : "";
+  const heroBand = hero
+    ? `<div class="persona-hero" style="--persona-hero:url('${esc(hero.file)}')" role="img" aria-label="${esc(hero.alt)}"></div>`
+    : "";
+  const etymology = isBrandName(profile) ? `<section class="persona-etym">
+      <div class="persona-etym-grid">
+        <div class="persona-etym-card">
+          <span>Ad</span>
+          <strong>Kuzey</strong>
+          <em>Yön</em>
+        </div>
+        <div class="persona-etym-card">
+          <span>Soyad</span>
+          <strong>Akıncı</strong>
+          <em>Hareket</em>
+        </div>
+      </div>
+    </section>` : "";
   return chapterFrame(CHAPTERS[0], `
-    ${lead}
-    ${lede}
-    <div class="prose">${richText(profile.bio)}</div>
-    ${etymology}
-    ${factsHTML(profile.facts)}
-    ${optionalBlock("Gün", profile.day, "Okul, antrenman ve akşamın sırası buraya gelir.", "f-day")}
-    ${optionalBlock("Merak", profile.loves, "Sevdiği oyun, eşya ya da saat buraya yazılır.", "f-loves")}
-  <section class="group">
-      <h2>Fotoğraflar</h2>
-      ${galleryHTML(profile.photos)}
-    </section>
-  `);
+    ${heroBand}
+    <div class="persona-sheet">
+      <p class="persona-lede">${esc(profile.bio)}</p>
+      <section class="persona-vitals" aria-label="Özet bilgiler">
+        ${factsHTML(profile.facts)}
+      </section>
+      ${etymology}
+      ${personaBlocksHTML(profile.personaBlocks)}
+      ${optionalBlock("Merak", profile.loves, "Serbest zaman ve ilgi alanları.", "f-loves")}
+    </div>
+  `, "article-persona");
 }
 
 function renderFutbolcu() {
@@ -648,6 +724,9 @@ function editorHTML() {
         ${field("f-last", "Soyad", profile.lastName)}
         ${field("f-age", "Yaş", profile.age)}
         ${field("f-city", "Şehir", profile.city)}
+        ${field("f-birth-date", "Doğum tarihi", profile.birthDate)}
+        ${field("f-birth-place", "Doğum yeri", profile.birthPlace)}
+        ${field("f-hometown", "Memleket", profile.hometown, "wide")}
         ${field("f-idol", "Örnek aldığı oyuncu", profile.idol, "wide")}
         ${field("f-youtube", "YouTube", profile.youtube, "wide")}
         ${field("f-instagram", "Instagram", profile.instagram, "wide")}
@@ -677,6 +756,9 @@ function editorHTML() {
       <h2>Fotoğraflar</h2>
       <p class="empty">Dosyalar site klasöründeki <code>photos/</code> içinden gelir. Burada alt yazı ve açıklama yazılır.</p>
       ${rowsHTML("photos", profile.photos)}
+      <h2>Kişi sayfası</h2>
+      <p class="empty">Ramos sitesindeki gibi Kök, Aile, Öğrenim bölümleri. Bölüm fotoğrafı için chapter alanına kisi, futbolcu, kupalar, elci veya projeler yazın.</p>
+      ${rowsHTML("personaBlocks", profile.personaBlocks)}
       <h2>Kartlar</h2>
       ${rowsHTML("facts", profile.facts)}
       <h2>Rakamlar</h2>
@@ -764,6 +846,9 @@ function readForm(useFallback = false) {
     firstName: value("f-first"),
     lastName: value("f-last"),
     age: value("f-age"),
+    birthDate: value("f-birth-date"),
+    birthPlace: value("f-birth-place"),
+    hometown: value("f-hometown"),
     city: value("f-city"),
     idol: value("f-idol"),
     youtube: value("f-youtube"),
@@ -780,6 +865,7 @@ function readForm(useFallback = false) {
     loves: value("f-loves"),
     style: value("f-style"),
     photos: readRows("photos"),
+    personaBlocks: readRows("personaBlocks"),
     facts: readRows("facts"),
     stats: readRows("stats"),
     honours: readRows("honours"),
