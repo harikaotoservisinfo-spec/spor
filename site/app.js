@@ -67,7 +67,7 @@ const PLACEHOLDERS = {
 };
 
 const DEFAULT = window.SAHA_DEFAULT;
-let profile = load();
+let profile;
 let menuOpen = false;
 let editorOpen = false;
 let reelObserver = null;
@@ -1337,5 +1337,6 @@ window.addEventListener("hashchange", () => {
   syncChrome();
 });
 
+profile = load();
 renderPage();
 syncChrome();
