@@ -31,7 +31,8 @@ const ROW_FIELDS = {
   values: ["title", "text"],
   dreams: ["title", "text"],
   photos: ["file", "alt", "caption", "chapter"],
-  personaBlocks: ["title", "text", "chapter", "align"]
+  personaBlocks: ["title", "text", "chapter", "align"],
+  futbolBlocks: ["title", "text", "chapter", "align"]
 };
 
 const PHOTO_PATH = /^photos\/[a-z0-9._-]+\.(png|jpe?g|webp)$/i;
@@ -214,14 +215,25 @@ function mergeFacts(list) {
   return merged;
 }
 
-function mergePersonaBlocks(list) {
-  const defaults = cleanPersonaBlocks(DEFAULT.personaBlocks || []);
+function mergeStoryBlocks(list, defaultsKey) {
+  const defaults = cleanPersonaBlocks(DEFAULT[defaultsKey] || []);
   if (!list.length) return defaults;
   const known = new Set(list.map((block) => `${block.title}\n${block.align}`));
   const merged = [...list];
   defaults.forEach((block) => {
     const key = `${block.title}\n${block.align}`;
     if (!known.has(key)) merged.push(block);
+  });
+  return merged;
+}
+
+function mergeStats(list) {
+  const defaults = cleanList(DEFAULT.stats || [], ["label", "value"], { label: 40, value: 80 });
+  if (!list.length) return defaults;
+  const labels = new Set(list.map((stat) => stat.label));
+  const merged = [...list];
+  defaults.forEach((stat) => {
+    if (stat.label && !labels.has(stat.label)) merged.push(stat);
   });
   return merged;
 }
@@ -266,9 +278,11 @@ function sanitize(data, useFallback = true) {
     youtube: safeSocialUrl(source.youtube, "youtube") || (useFallback ? safeSocialUrl(DEFAULT.youtube, "youtube") : ""),
     instagram: safeSocialUrl(source.instagram, "instagram") || (useFallback ? safeSocialUrl(DEFAULT.instagram, "instagram") : ""),
     photos: mergePhotos(cleanPhotos(source.photos)),
-    personaBlocks: mergePersonaBlocks(cleanPersonaBlocks(source.personaBlocks)),
+    personaBlocks: mergeStoryBlocks(cleanPersonaBlocks(source.personaBlocks), "personaBlocks"),
+    futbolIntro: cleanBlock(source.futbolIntro, 1200, useFallback ? DEFAULT.futbolIntro || "" : ""),
+    futbolBlocks: mergeStoryBlocks(cleanPersonaBlocks(source.futbolBlocks), "futbolBlocks"),
     facts: mergeFacts(cleanList(source.facts, ["label", "value"], { label: 40, value: 80 })),
-    stats: cleanList(source.stats, ["label", "value"], { label: 40, value: 20 }),
+    stats: mergeStats(cleanList(source.stats, ["label", "value"], { label: 40, value: 80 })),
     honours: cleanList(source.honours, ["year", "title", "detail"], { year: 12, title: 60, detail: 180 }),
     values: cleanList(source.values, ["title", "text"], { title: 40, text: 240 }),
     dreams: cleanList(source.dreams, ["title", "text"], { title: 40, text: 240 })
@@ -599,49 +613,44 @@ function renderKisi() {
 }
 
 function renderFutbolcu() {
-  const bits = [fullName(profile)];
-  if (profile.team) bits.push(profile.team);
-  if (profile.position) bits.push(profile.position);
-  if (profile.number) bits.push(`forma ${profile.number}`);
-  if (profile.foot) bits.push(`güçlü ayak ${profile.foot.toLocaleLowerCase("tr")}`);
-  const stats = profile.stats.length
-    ? `<div class="stats">${profile.stats.map((stat) => `<div class="stat"><span>${esc(stat.label)}</span><strong>${esc(stat.value)}</strong></div>`).join("")}</div>`
-    : `<p class="empty">Sezon rakamları henüz yok.</p><p><button type="button" class="textbtn" data-action="edit" data-focus="add-stats">Rakam ekle</button></p>`;
   const action = chapterPhoto(profile, "futbolcu");
-  const lead = action ? `<div class="article-photo">${photoFigure(action, "portrait hero action")}</div>` : "";
+  const heroBand = action
+    ? `<div class="persona-hero persona-hero-saha" style="--persona-hero:url('${esc(action.file)}')" role="img" aria-label="${esc(action.alt)}"></div>`
+    : "";
+  const intro = profile.futbolIntro || profile.style;
   return chapterFrame(CHAPTERS[1], `
-    ${lead}
-    <p class="lede">${esc(bits.join(" · "))}</p>
-    <div class="layout">
-      <div>
-        <div class="prose">${richText(profile.style)}</div>
-        <section class="group">
-          <h2>Rakamlar</h2>
-          ${stats}
-        </section>
-      </div>
-      <div class="kit-col">
-        ${action ? photoFigure(action, "portrait kit-shot action") : ""}
-        ${shirtSVG(profile)}
-        <div class="pitch-card">
-          <h2>Mevki</h2>
-          ${pitchSVG(profile)}
-          <p class="pitch-label">${esc(profile.position || "Mevki seçilmedi")}</p>
+    ${heroBand}
+    <div class="persona-sheet">
+      <p class="persona-lede">${esc(intro)}</p>
+      <section class="persona-vitals" aria-label="Futbol özeti">
+        ${factsHTML(profile.stats)}
+      </section>
+      <div class="futbol-kit-band">
+        <div class="futbol-kit-main">
+          ${shirtSVG(profile)}
+          <div class="pitch-card pitch-card-inline">
+            <h2>Mevki</h2>
+            ${pitchSVG(profile)}
+            <p class="pitch-label">${esc(profile.position || "Mevki seçilmedi")}</p>
+            ${profile.foot ? `<p class="pitch-foot">Güçlü ayak: ${esc(profile.foot)}</p>` : ""}
+          </div>
         </div>
+        <div class="prose futbol-style">${richText(profile.style)}</div>
       </div>
+      ${personaBlocksHTML(profile.futbolBlocks)}
+      <section class="group futbol-play">
+        <h2>Antrenman</h2>
+        <div class="mini">
+          <div class="goal"></div>
+          <div class="ball" id="ball"></div>
+        </div>
+        <div class="shot-row">
+          <button type="button" class="textbtn" data-action="kick">Topa vur</button>
+          <p class="gol" id="gol" aria-live="polite"></p>
+        </div>
+      </section>
     </div>
-    <section class="group">
-      <h2>Antrenman</h2>
-      <div class="mini">
-        <div class="goal"></div>
-        <div class="ball" id="ball"></div>
-      </div>
-      <div class="shot-row">
-        <button type="button" class="textbtn" data-action="kick">Topa vur</button>
-        <p class="gol" id="gol" aria-live="polite"></p>
-      </div>
-    </section>
-  `);
+  `, "article-persona article-futbolcu");
 }
 
 function renderKupalar() {
@@ -751,11 +760,15 @@ function editorHTML() {
         ${area("f-bio", "Kişi metni", profile.bio)}
         ${area("f-day", "Gün", profile.day)}
         ${area("f-loves", "Merak", profile.loves)}
-        ${area("f-style", "Oyun fikri", profile.style)}
+        ${area("f-futbol-intro", "Futbolcu girişi", profile.futbolIntro || "")}
+        ${area("f-style", "Oyun profili", profile.style)}
       </div>
       <h2>Fotoğraflar</h2>
       <p class="empty">Dosyalar site klasöründeki <code>photos/</code> içinden gelir. Burada alt yazı ve açıklama yazılır.</p>
       ${rowsHTML("photos", profile.photos)}
+      <h2>Futbolcu sayfası</h2>
+      <p class="empty">Çisem Spor, mevki yolculuğu ve hız bölümleri. chapter alanı: kisi, futbolcu, kupalar, elci, projeler.</p>
+      ${rowsHTML("futbolBlocks", profile.futbolBlocks || [])}
       <h2>Kişi sayfası</h2>
       <p class="empty">Ramos sitesindeki gibi Kök, Aile, Öğrenim bölümleri. Bölüm fotoğrafı için chapter alanına kisi, futbolcu, kupalar, elci veya projeler yazın.</p>
       ${rowsHTML("personaBlocks", profile.personaBlocks)}
@@ -863,9 +876,11 @@ function readForm(useFallback = false) {
     bio: value("f-bio"),
     day: value("f-day"),
     loves: value("f-loves"),
+    futbolIntro: value("f-futbol-intro"),
     style: value("f-style"),
     photos: readRows("photos"),
     personaBlocks: readRows("personaBlocks"),
+    futbolBlocks: readRows("futbolBlocks"),
     facts: readRows("facts"),
     stats: readRows("stats"),
     honours: readRows("honours"),

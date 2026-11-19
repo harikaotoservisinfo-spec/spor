@@ -1,9 +1,9 @@
 window.SAHA_DEFAULT = {
   firstName: "Kuzey",
   lastName: "Akıncı",
-  number: "",
-  position: "",
-  team: "",
+  number: "9",
+  position: "Sağ kanat",
+  team: "Çisem Spor",
   city: "Antalya",
   age: "15",
   birthDate: "14 Şubat 2011",
@@ -15,7 +15,8 @@ window.SAHA_DEFAULT = {
   bio: "Formasını bilen çok kişi var; Kuzey'i tanıyan daha az. Kuzey Akıncı, Yusufeli, Artvin kökenli; Muratpaşa'da doğmuş, Antalya'da ailesiyle yaşayan ve öğrenimine burada devam eden bir genç. Bu sayfa skor tabelası değil — önce insanı, sonra futbolcuyu anlatır.",
   day: "Okul ve antrenman Antalya ritmiyle birleşir. Kısa bir gün bile planlıysa boşa gitmez.",
   loves: "Saha, video çekimi ve tekrarlayan antrenman saati.",
-  style: "Oyun fikri markanın cümlesi: önce gör, sonra akın et. Topu kazanınca acele yok. Basit pas, doğru ayak. Mevki ve takım yazılınca bu sayfa ona göre daralır.",
+  futbolIntro: "Futbola forvet olarak başladı. Çisem Spor'da yoluna devam ediyor; bugün sağ kanatta oynasa da forvet refleksi oyununun içinde duruyor.",
+  style: "Sprinter bir yapıya sahip: çok hızlı, ilk adımda fark yaratır. Topu alınca önce hız, sonra doğru karar. Her geçen gün kendini geliştirmeye devam ediyor.",
   kit: "#f3f1ea",
   kitInk: "#142018",
   youtube: "https://www.youtube.com/@kuzeyfutbol",
@@ -85,7 +86,32 @@ window.SAHA_DEFAULT = {
       align: "right"
     }
   ],
-  stats: [],
+  stats: [
+    { label: "Ana mevki", value: "Sağ kanat" },
+    { label: "Forma", value: "9" },
+    { label: "Kulüp", value: "Çisem Spor" },
+    { label: "Profil", value: "Sprinter" }
+  ],
+  futbolBlocks: [
+    {
+      title: "Çisem Spor",
+      text: "Futbol hayatına Çisem Spor'da başladı; halen aynı kulüpte. Antrenman, maç ve forma bilgisi burada oturdu. Kulübünden ayrılmadan büyüyen bir hikâye: tanıdık saha, tanıdık arkadaşlar, her sezon bir üst basamak.",
+      chapter: "projeler",
+      align: "left"
+    },
+    {
+      title: "Mevki yolculuğu",
+      text: "Forvet olarak sahaya çıktı. Sol kanatta ve forvet arkasında da görev aldı. Bugün oynadığı ana görev sağ kanat; yine de forvet özelliği — alan bulmak, ceza sahasında durmak, bitirmek — oyundan çıkmadı.",
+      chapter: "futbolcu",
+      align: "right"
+    },
+    {
+      title: "Hız ve gelişim",
+      text: "Kısa mesafede çok hızlı. Sprinter yapısı, topu kazandığı anda baskıyı geride bırakmasını sağlar. Hız tek başına yetmez diye öğreniyor; pas, orta ve son pasla birleşince tam silahına dönüşüyor. Her geçen gün üstüne koyuyor.",
+      chapter: "kupalar",
+      align: "left"
+    }
+  ],
   honours: [],
   values: [
     {
