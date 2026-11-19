@@ -208,10 +208,69 @@ function applyProfile(person) {
   document.documentElement.style.setProperty("--kit", person.kit);
   document.documentElement.style.setProperty("--kit-ink", person.kitInk);
   document.title = fullName(person);
-  const hero = heroPhoto(person);
-  const url = hero ? `url("${hero.file}")` : "none";
-  document.documentElement.style.setProperty("--photo-kisi", url);
-  document.documentElement.style.setProperty("--photo-futbolcu", url);
+}
+
+function chapterBgFile(id, person) {
+  if (id === "kisi") return heroPhoto(person)?.file || "";
+  return "";
+}
+
+function titleMarkup(title) {
+  const parts = title.trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return esc(title);
+  return parts.map((part) => esc(part)).join("<br>");
+}
+
+let activeHomeScene = null;
+
+function setHomeScene(id) {
+  const stack = document.querySelector(".bg-stack");
+  const areas = document.querySelectorAll(".area_seccion");
+  if (!stack || !areas.length) return;
+  const slide = stack.querySelector(`.bg-slide[data-bg="${id}"]`);
+  const hasImage = !!slide?.querySelector(".bg-ken");
+  activeHomeScene = hasImage ? id : null;
+  areas.forEach((area) => area.classList.toggle("is-active", area.dataset.scene === id));
+  stack.querySelectorAll(".bg-slide").forEach((bg) => {
+    const on = bg.dataset.bg === id && hasImage;
+    bg.classList.toggle("is-on", on);
+    if (on) {
+      const ken = bg.querySelector(".bg-ken");
+      if (ken && !reducedMotion) {
+        ken.style.animation = "none";
+        void ken.offsetWidth;
+        ken.style.animation = "";
+      }
+    }
+  });
+}
+
+function clearHomeScene() {
+  activeHomeScene = null;
+  document.querySelectorAll(".area_seccion").forEach((area) => area.classList.remove("is-active"));
+  document.querySelectorAll(".bg-slide").forEach((bg) => bg.classList.remove("is-on"));
+}
+
+function initHomeInteractions() {
+  const grid = document.querySelector(".home-grid");
+  const areas = [...document.querySelectorAll(".area_seccion")];
+  if (!grid || !areas.length) return;
+  areas.forEach((area) => {
+    area.addEventListener("pointerenter", () => setHomeScene(area.dataset.scene));
+    area.addEventListener("focus", () => setHomeScene(area.dataset.scene));
+  });
+  grid.addEventListener("pointerleave", clearHomeScene);
+  const coarse = window.matchMedia("(hover: none)").matches;
+  if (coarse) {
+    areas.forEach((area) => {
+      area.addEventListener("click", (event) => {
+        if (activeHomeScene !== area.dataset.scene) {
+          event.preventDefault();
+          setHomeScene(area.dataset.scene);
+        }
+      });
+    });
+  }
 }
 
 function setScene(id) {
@@ -245,37 +304,50 @@ function markSVG(person) {
   </svg>`;
 }
 
-function headerHTML() {
+function headerHTML(isHome) {
   const name = fullName(profile);
-  return `<a class="brand" href="#">
-      ${markSVG(profile)}
-      <span class="brand-name">${esc(name)}<small>Kişisel saha</small></span>
-    </a>
-    <div class="tools">
-      <button type="button" data-action="edit">Düzenle</button>
-      <button type="button" data-action="open-menu" aria-expanded="${menuOpen ? "true" : "false"}">Menü</button>
-    </div>`;
+  const menuBtn = `<button type="button" class="menu-toggle" data-action="open-menu" aria-expanded="${menuOpen ? "true" : "false"}" aria-label="Menü">
+        <span class="menu-bars" aria-hidden="true"><span></span><span></span><span></span></span>
+      </button>`;
+  return isHome
+    ? `<a class="brand brand-mono" href="#">
+        <span class="logo-monogram">${esc(initials(profile))}</span>
+        <span class="sr-only">${esc(name)}</span>
+      </a>
+      <div class="tools home-tools">
+        ${menuBtn}
+        <button type="button" data-action="edit">Düzenle</button>
+      </div>`
+    : `<a class="brand" href="#">
+        ${markSVG(profile)}
+        <span class="brand-name">${esc(name)}<small>Kişisel saha</small></span>
+      </a>
+      <div class="tools">
+        <button type="button" data-action="edit">Düzenle</button>
+        <button type="button" data-action="open-menu" aria-expanded="${menuOpen ? "true" : "false"}">Menü</button>
+      </div>`;
 }
 
 function homeHTML() {
-  const hero = heroPhoto(profile);
-  const panels = CHAPTERS.map((chapter) => {
-    const shot = chapter.id === "kisi" && hero
-      ? `<figure class="panel-shot"><img src="${esc(hero.file)}" alt="${esc(hero.alt)}" width="480" height="640" decoding="async" loading="eager"></figure>`
+  const backgrounds = CHAPTERS.map((chapter) => {
+    const file = chapterBgFile(chapter.id, profile);
+    const ken = file
+      ? `<div class="bg-ken" style="background-image:url(${esc(file)})"></div>`
       : "";
-    const extra = chapter.id === "kisi" && hero ? " panel-photo" : "";
-    return `<a class="panel${extra}" href="#${chapter.id}" data-scene="${chapter.id}">
-      <span class="idx">${chapter.index}</span>
-      <h2>${esc(chapter.title)}</h2>
-      <p>${esc(chapter.line)}</p>
-      ${shot}
-    </a>`;
+    return `<div class="bg-slide" data-bg="${chapter.id}">${ken}</div>`;
   }).join("");
-  const dots = CHAPTERS.map((chapter) => `<button type="button" data-action="scene" data-scene="${chapter.id}" aria-label="${esc(chapter.title)}"></button>`).join("");
+  const areas = CHAPTERS.map((chapter) => `<a class="area_seccion" href="#${chapter.id}" data-scene="${chapter.id}">
+      <span class="titulo">${titleMarkup(chapter.title)}</span>
+    </a>`).join("");
   return `<h1 class="sr-only">${esc(fullName(profile))}</h1>
-    <div class="reel" id="reel">${panels}</div>
-    <p class="hint">Kaydır</p>
-    <nav class="rail" aria-label="Bölümler">${dots}</nav>`;
+    <div class="bg-stack" aria-hidden="true">${backgrounds}</div>
+    <div class="home-shell">
+      <div class="home-grid secc_5">${areas}</div>
+    </div>
+    <footer class="home-footer">
+      <span>${esc(fullName(profile))}</span>
+      <span>Kişisel saha</span>
+    </footer>`;
 }
 
 function cupSVG() {
@@ -545,8 +617,9 @@ function editorHTML() {
 
 function menuHTML() {
   const page = route();
+  const isHome = page === "home";
   const links = CHAPTERS.map((chapter) => `<a href="#${chapter.id}" ${page === chapter.id ? 'aria-current="page"' : ""}>${esc(chapter.title)}</a>`).join("");
-  return `<nav class="menu" aria-label="Menü">
+  return `<nav class="menu${isHome ? " menu-drawer" : ""}" aria-label="Menü">
     <div class="menu-top"><button type="button" class="textbtn" data-action="close-menu">Kapat</button></div>
     ${links}
     <button type="button" class="textbtn" data-action="edit">Düzenle</button>
@@ -556,21 +629,33 @@ function menuHTML() {
 function renderPage() {
   applyProfile(profile);
   const page = route();
-  document.body.classList.toggle("is-home", page === "home");
-  document.getElementById("top").innerHTML = headerHTML();
-  document.getElementById("view").innerHTML = page === "home" ? homeHTML() : PAGES[page]();
-  setScene(page === "home" ? "kisi" : page);
-  if (page === "home") watchReel();
-  else {
+  const isHome = page === "home";
+  document.body.classList.toggle("is-home", isHome);
+  const stage = document.getElementById("stage");
+  if (stage) {
+    if (isHome) stage.hidden = true;
+    else stage.removeAttribute("hidden");
+  }
+  document.querySelector(".veil")?.classList.toggle("is-hidden", isHome);
+  document.querySelector(".grain")?.classList.toggle("is-hidden", isHome);
+  document.getElementById("top").innerHTML = headerHTML(isHome);
+  document.getElementById("view").innerHTML = isHome ? homeHTML() : PAGES[page]();
+  if (isHome) {
     reelObserver?.disconnect();
+    clearHomeScene();
+    initHomeInteractions();
+  } else {
+    setScene(page);
     window.scrollTo(0, 0);
   }
 }
 
 function syncChrome() {
   document.body.classList.toggle("lock", menuOpen || editorOpen);
-  const menuButton = document.querySelector("[data-action='open-menu']");
-  if (menuButton) menuButton.setAttribute("aria-expanded", menuOpen ? "true" : "false");
+  document.body.classList.toggle("menu-open", menuOpen);
+  document.querySelectorAll("[data-action='open-menu']").forEach((menuButton) => {
+    menuButton.setAttribute("aria-expanded", menuOpen ? "true" : "false");
+  });
   document.getElementById("overlays").innerHTML = `${menuOpen ? menuHTML() : ""}${editorOpen ? editorHTML() : ""}`;
   if (menuOpen) document.querySelector("[data-action='close-menu']")?.focus();
 }
@@ -709,9 +794,6 @@ document.body.addEventListener("click", (event) => {
     openEditor(target.dataset.focus || "");
   } else if (action === "close-editor") {
     closeEditor();
-  } else if (action === "scene") {
-    const panel = document.querySelector(`.panel[data-scene="${target.dataset.scene}"]`);
-    panel?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
   } else if (action === "kick") {
     kick();
   } else if (action === "add-row") {
@@ -748,11 +830,6 @@ document.body.addEventListener("change", (event) => {
   if (event.target.id === "import-file" && event.target.files?.[0]) {
     importProfile(event.target.files[0]);
   }
-});
-
-document.body.addEventListener("pointerover", (event) => {
-  const panel = event.target.closest?.(".panel");
-  if (panel?.dataset.scene) setScene(panel.dataset.scene);
 });
 
 document.addEventListener("keydown", (event) => {
