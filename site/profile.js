@@ -179,5 +179,17 @@ window.SAHA_DEFAULT = {
       title: "Defter",
       text: "Antrenman, maç, bir cümle. Haftada bir sayfa; proje bu ritmin kendisi."
     }
+  ],
+  gallery: [
+    {
+      id: "seed-projeler",
+      type: "image",
+      src: "photos/kuzey-projeler.jpg",
+      blobKey: "",
+      matchMacId: "",
+      matchLabel: "Maç günü",
+      date: "",
+      caption: "CSK tribünü"
+    }
   ]
 };
