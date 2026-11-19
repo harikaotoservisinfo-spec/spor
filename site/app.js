@@ -67,6 +67,50 @@ function safeColor(value, fallback) {
   return /^#[0-9a-fA-F]{6}$/.test(String(value || "")) ? String(value) : fallback;
 }
 
+function safeSocialUrl(value, kind) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:") return "";
+    const host = url.hostname.replace(/^www\./i, "").toLowerCase();
+    if (kind === "youtube" && (host === "youtube.com" || host === "m.youtube.com" || host === "youtu.be")) {
+      return host === "youtu.be"
+        ? `https://www.youtube.com/watch?v=${encodeURIComponent(url.pathname.slice(1))}`
+        : `https://www.youtube.com${url.pathname}`;
+    }
+    if (kind === "instagram" && (host === "instagram.com" || host === "m.instagram.com")) {
+      const path = url.pathname.endsWith("/") ? url.pathname : `${url.pathname}/`;
+      return `https://www.instagram.com${path}`;
+    }
+  } catch {
+    return "";
+  }
+  return "";
+}
+
+function youtubeIcon() {
+  return `<svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.5 6.2c-.3-1.1-1.2-2-2.3-2.3C19.4 3.5 12 3.5 12 3.5s-7.4 0-9.2.4c-1.1.3-2 1.2-2.3 2.3C0 8 0 12 0 12s0 4 .5 5.8c.3 1.1 1.2 2 2.3 2.3 1.8.4 9.2.4 9.2.4s7.4 0 9.2-.4c1.1-.3 2-1.2 2.3-2.3.5-1.8.5-5.8.5-5.8s0-4-.5-5.8ZM9.7 15.5V8.5L15.8 12l-6.1 3.5Z"/></svg>`;
+}
+
+function instagramIcon() {
+  return `<svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7Zm5 3.8A5.2 5.2 0 1 1 7.8 13 5.2 5.2 0 0 1 12 7.8Zm0 2A3.2 3.2 0 1 0 15.2 13 3.2 3.2 0 0 0 12 9.8Zm5.6-2.9a1.2 1.2 0 1 1-1.2 1.2 1.2 1.2 0 0 1 1.2-1.2Z"/></svg>`;
+}
+
+function socialIconsHTML(person) {
+  const youtube = safeSocialUrl(person.youtube, "youtube");
+  const instagram = safeSocialUrl(person.instagram, "instagram");
+  if (!youtube && !instagram) return "";
+  return `<div class="social">
+    ${youtube ? `<a class="social-link" href="${esc(youtube)}" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><span class="sr-only">YouTube</span>${youtubeIcon()}</a>` : ""}
+    ${instagram ? `<a class="social-link" href="${esc(instagram)}" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><span class="sr-only">Instagram</span>${instagramIcon()}</a>` : ""}
+  </div>`;
+}
+
+function personalSahaHTML(person) {
+  return `<span class="personal-tag"><span class="personal-label">Kişisel saha</span>${socialIconsHTML(person)}</span>`;
+}
+
 function cleanLine(value, max, fallback = "") {
   const text = String(value ?? "").replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
   return text || fallback;
@@ -173,6 +217,8 @@ function sanitize(data, useFallback = true) {
     style: cleanBlock(source.style, 800),
     kit: safeColor(source.kit, "#f3f1ea"),
     kitInk: safeColor(source.kitInk, "#142018"),
+    youtube: safeSocialUrl(source.youtube, "youtube") || (useFallback ? safeSocialUrl(DEFAULT.youtube, "youtube") : ""),
+    instagram: safeSocialUrl(source.instagram, "instagram") || (useFallback ? safeSocialUrl(DEFAULT.instagram, "instagram") : ""),
     photos: mergePhotos(cleanPhotos(source.photos)),
     facts: cleanList(source.facts, ["label", "value"], { label: 40, value: 80 }),
     stats: cleanList(source.stats, ["label", "value"], { label: 40, value: 20 }),
@@ -347,7 +393,7 @@ function headerHTML(isHome) {
       </div>`
     : `<a class="brand" href="#">
         ${markSVG(profile)}
-        <span class="brand-name">${esc(name)}<small>Kişisel saha</small></span>
+        <span class="brand-name">${esc(name)}<small class="brand-tag">${personalSahaHTML(profile)}</small></span>
       </a>
       <div class="tools">
         <button type="button" data-action="edit">Düzenle</button>
@@ -373,7 +419,7 @@ function homeHTML() {
     </div>
     <footer class="home-footer">
       <span>${esc(fullName(profile))}</span>
-      <span>Kişisel saha</span>
+      ${personalSahaHTML(profile)}
     </footer>`;
 }
 
@@ -445,7 +491,7 @@ function chapterFrame(chapter, inner) {
     <p class="kicker">${chapter.index} · ${esc(chapter.kicker)}</p>
     <h1>${esc(chapter.title)}</h1>
     ${inner}
-    <footer class="colophon"><span>${esc(fullName(profile))}</span><span>Kişisel saha</span></footer>
+    <footer class="colophon"><span>${esc(fullName(profile))}</span>${personalSahaHTML(profile)}</footer>
   </article>`;
 }
 
@@ -603,6 +649,8 @@ function editorHTML() {
         ${field("f-age", "Yaş", profile.age)}
         ${field("f-city", "Şehir", profile.city)}
         ${field("f-idol", "Örnek aldığı oyuncu", profile.idol, "wide")}
+        ${field("f-youtube", "YouTube", profile.youtube, "wide")}
+        ${field("f-instagram", "Instagram", profile.instagram, "wide")}
       </div>
       <h2>Saha</h2>
       <div class="form-grid">
@@ -718,6 +766,8 @@ function readForm(useFallback = false) {
     age: value("f-age"),
     city: value("f-city"),
     idol: value("f-idol"),
+    youtube: value("f-youtube"),
+    instagram: value("f-instagram"),
     number: value("f-number"),
     position: value("f-position"),
     team: value("f-team"),
@@ -746,7 +796,7 @@ function updatePreview() {
   if (preview) preview.textContent = fullName(draft);
   if (shirt) shirt.innerHTML = shirtSVG(draft);
   const brand = document.querySelector(".brand-name");
-  if (brand) brand.innerHTML = `${esc(fullName(draft))}<small>Kişisel saha</small>`;
+  if (brand) brand.innerHTML = `${esc(fullName(draft))}<small class="brand-tag">${personalSahaHTML(draft)}</small>`;
   const mark = document.querySelector(".mark text");
   if (mark) mark.textContent = initials(draft);
   applyProfile(draft);
