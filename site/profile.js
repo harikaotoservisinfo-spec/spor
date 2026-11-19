@@ -170,19 +170,21 @@ window.SAHA_DEFAULT = {
   ],
   honours: [],
   weeklyMatch: {
-    date: "23.11.2026",
-    time: "14:00",
-    competition: "U17 Lig A Grubu",
-    round: "9. hafta",
-    homeName: "ÇİSEM SPOR GENÇLİK VE SPOR",
-    awayName: "KADRİYE SPOR",
-    homeLogo: "photos/cisem-spor.webp",
+    askfUrl:
+      "https://antalyaaskf.org/canli-skor/47758/antalya-kundu-spor-cisem-spor-genclik-ve-spor",
+    date: "",
+    time: "",
+    competition: "",
+    round: "",
+    homeName: "",
+    awayName: "",
+    homeLogo: "",
     awayLogo: "",
-    venueName: "Çisem Spor Halı Saha",
-    venueAddress: "Varsak Karşıyaka Mah., Türlütolu Cad. No:16, Varsak / Kepez",
+    venueName: "",
+    venueAddress: "",
     venueCity: "Antalya",
-    mapsUrl: "https://maps.google.com/?q=Varsak+Kepez+Antalya+halı+saha",
-    note: "Maç öncesi 30 dk önce toplanma. Forma ve tekmelik zorunlu."
+    mapsUrl: "",
+    note: ""
   },
   values: [
     {

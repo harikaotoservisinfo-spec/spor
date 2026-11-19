@@ -164,6 +164,40 @@ function safeAskfUrl(value) {
   }
 }
 
+function safeAskfLiveUrl(value) {
+  const href = safeAskfUrl(value);
+  if (!href) return "";
+  try {
+    const path = new URL(href).pathname;
+    if (!/\/canli-skor\/\d+/i.test(path)) return "";
+    return href;
+  } catch {
+    return "";
+  }
+}
+
+function askfMacIdFromUrl(value) {
+  const href = safeAskfLiveUrl(value);
+  if (!href) return "";
+  const m = href.match(/\/canli-skor\/(\d{4,9})/i);
+  return m ? m[1] : "";
+}
+
+function safeTeamLogo(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  if (PHOTO_PATH.test(raw)) return raw;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:") return "";
+    if (url.hostname.replace(/^www\./i, "").toLowerCase() !== "antalyaaskf.org") return "";
+    if (!url.pathname.includes("/imgs/")) return "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 function safeTffUrl(value) {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
@@ -234,8 +268,8 @@ function weeklyMatchData(person) {
   const team = person?.team || "Çisem Spor";
   const homeName = cleanLine(src.homeName, 80, fb.homeName || team);
   const awayName = cleanLine(src.awayName, 80, fb.awayName || "");
-  let homeLogo = PHOTO_PATH.test(String(src.homeLogo || "").trim()) ? String(src.homeLogo).trim() : "";
-  let awayLogo = PHOTO_PATH.test(String(src.awayLogo || "").trim()) ? String(src.awayLogo).trim() : "";
+  let homeLogo = safeTeamLogo(src.homeLogo) || safeTeamLogo(fb.homeLogo);
+  let awayLogo = safeTeamLogo(src.awayLogo) || safeTeamLogo(fb.awayLogo);
   if (!homeLogo && clubIsCisem(homeName) && person?.teamLogo) homeLogo = person.teamLogo;
   if (!awayLogo && clubIsCisem(awayName) && person?.teamLogo) awayLogo = person.teamLogo;
   return {
@@ -251,7 +285,10 @@ function weeklyMatchData(person) {
     venueAddress: cleanBlock(src.venueAddress, 240),
     venueCity: cleanLine(src.venueCity, 40, fb.venueCity || "Antalya"),
     mapsUrl: safeMapsUrl(src.mapsUrl) || safeMapsUrl(fb.mapsUrl),
-    note: cleanBlock(src.note, 400)
+    note: cleanBlock(src.note, 400),
+    askfUrl: safeAskfLiveUrl(src.askfUrl) || safeAskfLiveUrl(fb.askfUrl),
+    dateRaw: cleanLine(src.dateRaw, 120),
+    datePending: Boolean(src.datePending)
   };
 }
 
@@ -265,20 +302,42 @@ function cleanWeeklyMatch(source, useFallback) {
     round: cleanLine(src.round, 40, fb.round || ""),
     homeName: cleanLine(src.homeName, 80, fb.homeName || ""),
     awayName: cleanLine(src.awayName, 80, fb.awayName || ""),
-    homeLogo: PHOTO_PATH.test(String(src.homeLogo ?? "").trim()) ? String(src.homeLogo).trim() : (fb.homeLogo || ""),
-    awayLogo: PHOTO_PATH.test(String(src.awayLogo ?? "").trim()) ? String(src.awayLogo).trim() : (fb.awayLogo || ""),
+    homeLogo: safeTeamLogo(src.homeLogo) || safeTeamLogo(fb.homeLogo),
+    awayLogo: safeTeamLogo(src.awayLogo) || safeTeamLogo(fb.awayLogo),
     venueName: cleanLine(src.venueName, 80, fb.venueName || ""),
     venueAddress: cleanBlock(src.venueAddress, 240) || (useFallback ? cleanBlock(fb.venueAddress, 240) : ""),
     venueCity: cleanLine(src.venueCity, 40, fb.venueCity || "Antalya"),
     mapsUrl: safeMapsUrl(src.mapsUrl) || (useFallback ? safeMapsUrl(fb.mapsUrl) : ""),
-    note: cleanBlock(src.note, 400)
+    note: cleanBlock(src.note, 400),
+    askfUrl: safeAskfLiveUrl(src.askfUrl) || (useFallback ? safeAskfLiveUrl(fb.askfUrl) : "")
   };
 }
 
 function mergeWeeklyMatch(data) {
   const row = cleanWeeklyMatch(data, true);
-  if (row.date || row.awayName) return row;
+  if (row.date || row.awayName || row.askfUrl) return row;
   return cleanWeeklyMatch(DEFAULT.weeklyMatch, true);
+}
+
+function mergeFixtureWithAskf(local, remote) {
+  if (!remote) return local;
+  return {
+    ...local,
+    homeName: remote.homeName || local.homeName,
+    awayName: remote.awayName || local.awayName,
+    homeLogo: safeTeamLogo(remote.homeLogo) || local.homeLogo,
+    awayLogo: safeTeamLogo(remote.awayLogo) || local.awayLogo,
+    competition: remote.competition || local.competition,
+    date: remote.date || local.date,
+    time: remote.time || local.time,
+    venueName: remote.venueName || local.venueName,
+    venueAddress: local.venueAddress,
+    venueCity: remote.venueCity || local.venueCity,
+    mapsUrl: safeMapsUrl(remote.mapsUrl) || local.mapsUrl,
+    askfUrl: safeAskfLiveUrl(remote.sourceUrl) || local.askfUrl,
+    dateRaw: remote.dateRaw || local.dateRaw,
+    datePending: Boolean(remote.datePending)
+  };
 }
 
 function parseFixtureDateTime(dateStr, timeStr) {
@@ -324,10 +383,14 @@ function bindFixtureCountdown() {
   clearFixtureCountdown();
   const root = document.getElementById("fixture-countdown");
   if (!root) return;
+  if (root.dataset.pending === "1") return;
   const target = parseFixtureDateTime(root.dataset.date, root.dataset.time);
   const grid = root.querySelector(".fixture-countdown-grid");
   const label = root.querySelector(".fixture-countdown-label");
-  if (!target || !grid) return;
+  if (!target || !grid) {
+    if (label && !target) label.textContent = "Tarih ASKF'de açıklanınca sayaç başlar";
+    return;
+  }
   const parts = {
     days: grid.querySelector('[data-cd="days"]'),
     hours: grid.querySelector('[data-cd="hours"]'),
@@ -2783,33 +2846,22 @@ function renderIstatistikler() {
   `, "article-persona article-stats");
 }
 
-function renderMac() {
-  const fx = weeklyMatchData(profile);
-  const stance = chapterPhoto(profile, "mac");
-  const lead = stance ? `<div class="article-photo fixture-hero">${photoFigure(stance, "portrait hero fixture")}</div>` : "";
+function fixtureBoardHTML(fx) {
   const when = [fx.date, formatFixtureTime(fx.time)].filter(Boolean).join(" · ");
+  const whenDisplay = fx.datePending && fx.dateRaw ? fx.dateRaw : when;
   const meta = [fx.competition, fx.round].filter(Boolean).join(" · ");
   const venueLines = [fx.venueName, fx.venueAddress, fx.venueCity].filter(Boolean);
   const maps = fx.mapsUrl
     ? `<a class="fixture-maps" href="${esc(fx.mapsUrl)}" target="_blank" rel="noopener noreferrer">Haritada aç</a>`
     : "";
-  const empty = !fx.date && !fx.awayName;
-  const board = empty
-    ? `<p class="empty">${isAdmin() ? "Düzenle → Haftanın maçı bölümünden tarih, rakip ve adres girin." : "Bu hafta için maç bilgisi henüz eklenmedi."}</p>`
-    : `<div class="fixture-board">
-      <header class="fixture-head">
-        ${meta ? `<p class="fixture-meta">${esc(meta)}</p>` : ""}
-        ${when ? `<p class="fixture-when"><time datetime="">${esc(when)}</time></p>` : ""}
-      </header>
-      <div class="fixture-matchup">
-        ${fixtureCrestHTML(fx.homeName, fx.homeLogo, "home")}
-        <div class="fixture-center" aria-hidden="true">
-          <span class="fixture-vs">VS</span>
-          ${when ? `<span class="fixture-kickoff">${esc(formatFixtureTime(fx.time))}</span>` : ""}
-        </div>
-        ${fixtureCrestHTML(fx.awayName, fx.awayLogo, "away")}
-      </div>
-      <div id="fixture-countdown" class="fixture-countdown" data-date="${esc(fx.date)}" data-time="${esc(fx.time)}">
+  const countdownPending = fx.datePending || !fx.date;
+  const countdown = countdownPending
+    ? `<div id="fixture-countdown" class="fixture-countdown fixture-countdown-pending" data-pending="1">
+        <p class="fixture-countdown-label">Geri sayım</p>
+        <p class="fixture-pending-msg">${esc(fx.dateRaw || "Tarih henüz açıklanmadı")}</p>
+        <p class="match-note">ASKF tarihi netleşince sayaç otomatik başlar.</p>
+      </div>`
+  : `<div id="fixture-countdown" class="fixture-countdown" data-date="${esc(fx.date)}" data-time="${esc(fx.time)}">
         <p class="fixture-countdown-label">Maça kalan süre</p>
         <div class="fixture-countdown-grid" role="timer" aria-live="polite">
           <div class="fixture-cd-unit"><strong data-cd="days">00</strong><span>Gün</span></div>
@@ -2817,7 +2869,21 @@ function renderMac() {
           <div class="fixture-cd-unit"><strong data-cd="minutes">00</strong><span>Dk</span></div>
           <div class="fixture-cd-unit"><strong data-cd="seconds">00</strong><span>Sn</span></div>
         </div>
+      </div>`;
+  return `
+      <header class="fixture-head">
+        ${meta ? `<p class="fixture-meta">${esc(meta)}</p>` : ""}
+        ${whenDisplay ? `<p class="fixture-when"><time datetime="">${esc(whenDisplay)}</time></p>` : ""}
+      </header>
+      <div class="fixture-matchup">
+        ${fixtureCrestHTML(fx.homeName, fx.homeLogo, "home")}
+        <div class="fixture-center" aria-hidden="true">
+          <span class="fixture-vs">VS</span>
+          ${fx.time ? `<span class="fixture-kickoff">${esc(formatFixtureTime(fx.time))}</span>` : ""}
+        </div>
+        ${fixtureCrestHTML(fx.awayName, fx.awayLogo, "away")}
       </div>
+      ${countdown}
       ${venueLines.length ? `<section class="fixture-venue">
         <h2>Saha & adres</h2>
         <address class="fixture-address">
@@ -2825,11 +2891,61 @@ function renderMac() {
         </address>
         ${maps}
       </section>` : ""}
-      ${fx.note ? `<p class="match-note fixture-note">${esc(fx.note)}</p>` : ""}
-    </div>`;
+      ${fx.note ? `<p class="match-note fixture-note">${esc(fx.note)}</p>` : ""}`;
+}
+
+function paintFixtureBoard(fx) {
+  const shell = document.getElementById("fixture-board");
+  if (!shell) return;
+  shell.innerHTML = fixtureBoardHTML(fx);
+  bindFixtureCountdown();
+}
+
+async function bindAskfFixture() {
+  const askfUrl = safeAskfLiveUrl(profile.weeklyMatch?.askfUrl);
+  const macId = askfMacIdFromUrl(askfUrl);
+  if (!macId) return;
+  const sync = document.getElementById("fixture-askf-sync");
+  sync?.removeAttribute("hidden");
+  try {
+    const res = await fetch(`/api/askf-fixture?macId=${encodeURIComponent(macId)}`, {
+      credentials: "same-origin",
+      cache: "no-store"
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!data?.ok || !data.fixture) return;
+    const merged = mergeFixtureWithAskf(weeklyMatchData(profile), data.fixture);
+    paintFixtureBoard(merged);
+    const stamp = document.getElementById("fixture-askf-stamp");
+    if (stamp) {
+      const mins = Math.max(1, Math.round((Date.now() / 1000 - (data.fixture.fetchedAt || 0)) / 60));
+      stamp.textContent = data.fixture.cached ? `ASKF (önbellek · ${mins} dk önce)` : "ASKF'den güncellendi";
+    }
+  } catch (_) {
+    const stamp = document.getElementById("fixture-askf-stamp");
+    if (stamp) stamp.textContent = "ASKF bağlantısı kurulamadı";
+  } finally {
+    sync?.setAttribute("hidden", "");
+  }
+}
+
+function renderMac() {
+  const fx = weeklyMatchData(profile);
+  const askfUrl = safeAskfLiveUrl(fx.askfUrl);
+  const stance = chapterPhoto(profile, "mac");
+  const lead = stance ? `<div class="article-photo fixture-hero">${photoFigure(stance, "portrait hero fixture")}</div>` : "";
+  const empty = !fx.date && !fx.awayName && !askfUrl;
+  const board = empty
+    ? `<p class="empty">${isAdmin() ? "Düzenle → Haftanın maçı: ASKF canlı skor linki veya rakip bilgisi girin." : "Bu hafta için maç bilgisi henüz eklenmedi."}</p>`
+    : `<div class="fixture-board" id="fixture-board">${fixtureBoardHTML(fx)}</div>
+    ${askfUrl ? `<p class="fixture-askf-bar">
+      <a href="${esc(askfUrl)}" target="_blank" rel="noopener noreferrer">Antalya ASKF — maç detayı</a>
+      <span class="fixture-askf-stamp" id="fixture-askf-stamp">ASKF ile eşleniyor…</span>
+      <span class="fixture-askf-sync" id="fixture-askf-sync" hidden aria-live="polite">Güncelleniyor…</span>
+    </p>` : ""}`;
   return chapterFrame(CHAPTERS[3], `
     ${lead}
-    <p class="lede">Bu haftaki maç — kimle, saat kaçta, nerede. Tribün veya saha kenarı için tek ekran.</p>
+    <p class="lede">Bu haftaki maç — takım amblemleri, saat ve saha ASKF canlı skor sayfasından okunur (yaklaşık 10 dk önbellek).</p>
     ${board}
   `, "article-fixture");
 }
@@ -3358,8 +3474,9 @@ function editorHTML() {
       <h2>Kupalar ve ödüller</h2>
       ${rowsHTML("honours", profile.honours)}
       <h2>Haftanın maçı</h2>
-      <p class="empty">Tarih (GG.AA.YYYY), saat (SS:DD), rakip ve saha bilgisi — canlı sayfada geri sayım ile.</p>
+      <p class="empty">ASKF canlı skor linki (öncelikli) veya elle tarih / rakip. Örnek: antalyaaskf.org/canli-skor/47758/…</p>
       <div class="form-grid">
+        ${field("f-wm-askf-url", "ASKF canlı skor URL", profile.weeklyMatch?.askfUrl || "", "wide")}
         ${field("f-wm-date", "Tarih", profile.weeklyMatch?.date || "")}
         ${field("f-wm-time", "Saat", profile.weeklyMatch?.time || "")}
         ${field("f-wm-round", "Hafta / tur", profile.weeklyMatch?.round || "")}
@@ -3436,8 +3553,10 @@ function renderPage() {
   document.body.classList.toggle("is-admin", isAdmin());
   if (page === "projeler") void hydrateGallery();
   if (page === "form") bindContactForm();
-  if (page === "mac") bindFixtureCountdown();
-  else clearFixtureCountdown();
+  if (page === "mac") {
+    bindFixtureCountdown();
+    void bindAskfFixture();
+  } else clearFixtureCountdown();
 }
 
 function syncChrome() {
@@ -3475,6 +3594,7 @@ function readForm(useFallback = false) {
     youtube: value("f-youtube"),
     instagram: value("f-instagram"),
     weeklyMatch: {
+      askfUrl: value("f-wm-askf-url"),
       date: value("f-wm-date"),
       time: value("f-wm-time"),
       round: value("f-wm-round"),

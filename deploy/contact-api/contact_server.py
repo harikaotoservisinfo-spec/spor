@@ -13,7 +13,9 @@ from datetime import datetime, timezone
 from email.message import EmailMessage
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
+
+from askf_fixture import get_fixture
 
 PORT = int(os.environ.get("CONTACT_PORT", "9473"))
 ENV_FILE = Path(os.environ.get("CONTACT_ENV", "/etc/kuzeyakinci/contact.env"))
@@ -188,13 +190,37 @@ class Handler(BaseHTTPRequestHandler):
         return
 
     def do_OPTIONS(self) -> None:
-        if urlparse(self.path).path != "/api/contact":
+        path = urlparse(self.path).path
+        if path not in ("/api/contact", "/api/askf-fixture"):
             self.send_response(404)
             self.end_headers()
             return
         self.send_response(204)
         cors_headers(self)
         self.end_headers()
+
+    def do_GET(self) -> None:
+        path = urlparse(self.path).path
+        if path != "/api/askf-fixture":
+            json_response(self, 404, {"ok": False, "error": "not_found"})
+            return
+        if not origin_ok(self):
+            json_response(self, 403, {"ok": False, "error": "origin"})
+            return
+        qs = parse_qs(urlparse(self.path).query)
+        mac_id = (qs.get("macId") or qs.get("mac") or [""])[0].strip()
+        if not mac_id:
+            json_response(self, 400, {"ok": False, "error": "macId"})
+            return
+        try:
+            fixture = get_fixture(mac_id)
+        except ValueError:
+            json_response(self, 400, {"ok": False, "error": "macId"})
+            return
+        except Exception as exc:
+            json_response(self, 502, {"ok": False, "error": "upstream", "detail": type(exc).__name__})
+            return
+        json_response(self, 200, {"ok": True, "fixture": fixture})
 
     def do_POST(self) -> None:
         if urlparse(self.path).path != "/api/contact":

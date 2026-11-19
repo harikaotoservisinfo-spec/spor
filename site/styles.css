@@ -2978,6 +2978,34 @@ body.gallery-lightbox-open {
   margin-top: 0.85rem;
 }
 
+.fixture-countdown-pending .fixture-pending-msg {
+  margin: 0.25rem 0 0;
+  font-size: 1.05rem;
+  color: color-mix(in srgb, var(--ice) 92%, white);
+}
+
+.fixture-askf-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 1rem;
+  margin-top: 0.85rem;
+  font-size: 0.82rem;
+}
+
+.fixture-askf-bar a {
+  color: var(--lime);
+  font-weight: 600;
+}
+
+.fixture-askf-stamp {
+  opacity: 0.62;
+}
+
+.fixture-askf-sync[hidden] {
+  display: none;
+}
+
 @media (max-width: 520px) {
   .fixture-matchup {
     grid-template-columns: 1fr;
