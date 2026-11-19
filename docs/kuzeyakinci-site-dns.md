@@ -26,11 +26,13 @@ Güncelleme (SSH anahtarınızla):
 
 **NS** satırlarına dokunmayın.
 
-DNS yayıldıktan sonra sunucuda (root SSH):
+DNS yayıldıktan sonra sunucuda (root SSH) — **yalnızca bu domain**:
 
 ```bash
 certbot --nginx -d kuzeyakinci.site -d www.kuzeyakinci.site
 ```
+
+**Önemli:** `deploy/nginx/kuzeyakinci.site.conf` sadece HTTP şablonudur; certbot sonrası dosyayı üzerine kopyalamayın (HTTPS bloğu silinirse site başka projeye düşebilir). Sunucuya sadece `rsync` ile `site/` klasörü gidilir.
 
 ## 2. GitHub Pages (isteğe bağlı)
 
