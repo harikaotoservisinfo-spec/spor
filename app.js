@@ -10,6 +10,13 @@ const CHAPTERS = [
   { id: "form", index: "07", title: "Form", kicker: "Yaz", line: "Mesajınız e-posta ile iletilir." }
 ];
 
+/** Ana sayfa şeridinde görünmeyen bölümler (yalnızca menüden). */
+const HOME_MENU_ONLY = new Set(["iletisim", "form"]);
+
+function homeGridChapters() {
+  return CHAPTERS.filter((ch) => !HOME_MENU_ONLY.has(ch.id));
+}
+
 const CONTACT_TOPICS = [
   { id: "genel", label: "Genel" },
   { id: "antrenman", label: "Antrenman" },
@@ -1333,14 +1340,15 @@ function headerHTML(isHome) {
 }
 
 function homeHTML() {
-  const backgrounds = CHAPTERS.map((chapter) => {
+  const gridChapters = homeGridChapters();
+  const backgrounds = gridChapters.map((chapter) => {
     const file = chapterBgFile(chapter.id, profile);
     const ken = file
       ? `<div class="bg-ken" style="background-image:url(${esc(file)})"></div>`
       : "";
     return `<div class="bg-slide" data-bg="${chapter.id}">${ken}</div>`;
   }).join("");
-  const areas = CHAPTERS.map((chapter) => `<a class="area_seccion" href="#${chapter.id}" data-scene="${chapter.id}">
+  const areas = gridChapters.map((chapter) => `<a class="area_seccion" href="#${chapter.id}" data-scene="${chapter.id}">
       <span class="titulo">${titleMarkup(chapter.title)}</span>
     </a>`).join("");
   return `<h1 class="sr-only">${esc(fullName(profile))}</h1>
