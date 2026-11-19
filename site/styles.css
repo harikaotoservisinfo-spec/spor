@@ -988,6 +988,11 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   margin: 0 0 0.25rem;
 }
 
+.stats-source-link-row {
+  margin: 0 0 0.45rem;
+  text-align: right;
+}
+
 .stats-source-link {
   font-size: 0.85rem;
   text-underline-offset: 0.2em;

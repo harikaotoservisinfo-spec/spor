@@ -1496,13 +1496,7 @@ function askfBlockHTML(person) {
   const hasSeasons = buildSeasonCardItems(person).length;
   if (!hasAskf && !hasSeasons) return "";
   return `<section class="group askf-block stats-dashboard">
-    <div class="stats-source-head">
-      <div>
-        <h2>Antalya ASKF</h2>
-        <p class="tff-lede">Kariyer, maç, gol ve kart — il resmi amatör veri bankası.</p>
-      </div>
-      ${url ? `<a class="stats-source-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Oyuncu profili</a>` : ""}
-    </div>
+    ${url ? `<p class="stats-source-link-row"><a class="stats-source-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">ASKF oyuncu profili</a></p>` : ""}
     <nav class="stats-jump" aria-label="İstatistik bölümleri">
       <a href="#askf-sezonlar">Sezonlar</a>
     </nav>
@@ -1530,7 +1524,6 @@ function renderIstatistikler() {
   return chapterFrame(CHAPTERS[2], `
     ${heroBand}
     <div class="persona-sheet persona-stats">
-      <p class="persona-lede">ASKF kariyeri ve TFF resmi lig verisi — tek sayfada, doğrulanmış kaynaklarla.</p>
       ${askfBlockHTML(profile)}
       ${profileOverviewSectionHTML(profile)}
     </div>
