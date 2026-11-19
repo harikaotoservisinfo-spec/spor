@@ -94,6 +94,10 @@ window.SAHA_DEFAULT = {
     licenseNo: "2049878",
     club: "ÇİSEM SPOR GENÇLİK VE SPOR"
   },
+  playModel: {
+    xgPer90: "0.30",
+    matchLength: "90"
+  },
   seasons: [
     {
       id: "2025-26",
@@ -137,10 +141,13 @@ window.SAHA_DEFAULT = {
     }
   ],
   gameStats: [
-    { label: "Kaynak", value: "TFF resmi profil" },
+    { label: "Kaynak", value: "TFF maç detayı" },
     { label: "2025–26 maç", value: "25" },
     { label: "2025–26 gol", value: "12" },
-    { label: "2025–26 sonuç", value: "17G · 2B · 6M" }
+    { label: "2025–26 sonuç", value: "17G · 2B · 6M" },
+    { label: "Toplam süre", value: "1370 dk" },
+    { label: "İlk 11", value: "16" },
+    { label: "Yedek giriş", value: "9" }
   ],
   honours: [],
   values: [

@@ -945,6 +945,28 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   font-size: 0.82rem;
 }
 
+.match-table-play {
+  min-width: 52rem;
+}
+
+.match-play {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+}
+
+.match-min strong {
+  font-weight: 700;
+}
+
+.match-xg {
+  opacity: 0.92;
+}
+
+.playtime-block {
+  margin-top: -0.25rem;
+}
+
 .match-table th,
 .match-table td {
   text-align: left;

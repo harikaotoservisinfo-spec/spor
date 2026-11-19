@@ -29,7 +29,7 @@ const ROW_FIELDS = {
   stats: ["label", "value"],
   gameStats: ["label", "value"],
   seasons: ["id", "label", "competition", "played", "goals", "wins", "draws", "losses"],
-  matches: ["season", "date", "time", "home", "away", "score", "competition", "macId"],
+  matches: ["season", "date", "time", "home", "away", "score", "competition", "macId", "role", "subIn", "subOut", "minutes", "goals"],
   honours: ["year", "title", "detail"],
   values: ["title", "text"],
   dreams: ["title", "text"],
@@ -63,7 +63,11 @@ const PLACEHOLDERS = {
   home: "Ev sahibi",
   away: "Misafir",
   score: "2-1",
-  macId: "300799"
+  macId: "300799",
+  role: "ilk11",
+  subIn: "40",
+  subOut: "57",
+  minutes: "57"
 };
 
 const DEFAULT = window.SAHA_DEFAULT;
@@ -301,8 +305,15 @@ const MATCH_LIMITS = {
   away: 80,
   score: 12,
   competition: 60,
-  macId: 12
+  macId: 12,
+  role: 12,
+  subIn: 4,
+  subOut: 4,
+  minutes: 4,
+  goals: 3
 };
+
+const MATCH_ROLES = new Set(["ilk11", "yedek", "kadro_disi"]);
 
 const SEASON_LIMITS = {
   id: 12,
@@ -319,11 +330,113 @@ function cleanSeasons(list) {
   return cleanList(list, ROW_FIELDS.seasons, SEASON_LIMITS, 24);
 }
 
+function cleanMatchRole(value) {
+  const role = cleanLine(value, 12).toLocaleLowerCase("tr");
+  return MATCH_ROLES.has(role) ? role : "";
+}
+
+function numMatch(value) {
+  const n = Number(String(value ?? "").replace(",", ".").trim());
+  return Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
+}
+
+function matchLength(person) {
+  const n = numMatch(person?.playModel?.matchLength);
+  return n > 0 ? n : 90;
+}
+
+function xgPer90Rate(person) {
+  const n = Number(String(person?.playModel?.xgPer90 ?? "0.30").replace(",", "."));
+  return Number.isFinite(n) && n >= 0 ? n : 0.3;
+}
+
+function deriveMatchMinutes(match, length = 90) {
+  const stored = numMatch(match.minutes);
+  if (stored) return stored;
+  const subIn = numMatch(match.subIn);
+  const subOut = numMatch(match.subOut);
+  const role = cleanMatchRole(match.role);
+  if (role === "ilk11") return subOut || length;
+  if (role === "yedek") return subIn ? (subOut || length) - subIn : 0;
+  return 0;
+}
+
+function matchExpectedGoals(match, person) {
+  const length = matchLength(person);
+  const minutes = deriveMatchMinutes(match, length);
+  return (minutes / length) * xgPer90Rate(person);
+}
+
+function roleLabel(role) {
+  if (role === "ilk11") return "İlk 11";
+  if (role === "yedek") return "Yedek";
+  if (role === "kadro_disi") return "Kadro dışı";
+  return "—";
+}
+
+function formatMinuteMark(value) {
+  const min = numMatch(value);
+  return min ? `${min}'` : "—";
+}
+
+function formatDurationTotal(minutes) {
+  const total = numMatch(minutes);
+  if (!total) return "0 dk";
+  const hours = Math.floor(total / 60);
+  const rest = total % 60;
+  return hours ? `${total} dk (${hours}s ${rest}dk)` : `${total} dk`;
+}
+
+function playingTimeAggregate(matches, seasonId, person) {
+  const length = matchLength(person);
+  const rows = (matches || []).filter((m) => !seasonId || m.season === seasonId);
+  let totalMin = 0;
+  let goals = 0;
+  let xg = 0;
+  let starts = 0;
+  let subEntries = 0;
+  let benchUnused = 0;
+  rows.forEach((match) => {
+    const minutes = deriveMatchMinutes(match, length);
+    totalMin += minutes;
+    goals += numMatch(match.goals);
+    xg += matchExpectedGoals(match, person);
+    const role = cleanMatchRole(match.role);
+    if (role === "ilk11") starts += 1;
+    else if (role === "yedek") {
+      if (minutes > 0 || numMatch(match.subIn)) subEntries += 1;
+      else benchUnused += 1;
+    }
+  });
+  const appearances = rows.filter((m) => deriveMatchMinutes(m, length) > 0).length;
+  return {
+    totalMin,
+    goals,
+    xg,
+    starts,
+    subEntries,
+    benchUnused,
+    appearances,
+    avgMin: appearances ? totalMin / appearances : 0,
+    xgPer90: xgPer90Rate(person),
+    matchLength: length
+  };
+}
+
 function cleanMatches(list) {
-  return cleanList(list, ROW_FIELDS.matches, MATCH_LIMITS, 240).map((row) => ({
-    ...row,
-    macId: String(row.macId || "").replace(/\D/g, "").slice(0, 12)
-  })).filter((row) => row.date && row.score && (row.home || row.away));
+  return cleanList(list, ROW_FIELDS.matches, MATCH_LIMITS, 240).map((row) => {
+    const role = cleanMatchRole(row.role);
+    const minutes = numMatch(row.minutes) || "";
+    return {
+      ...row,
+      macId: String(row.macId || "").replace(/\D/g, "").slice(0, 12),
+      role,
+      subIn: numMatch(row.subIn) ? String(numMatch(row.subIn)) : "",
+      subOut: numMatch(row.subOut) ? String(numMatch(row.subOut)) : "",
+      minutes: minutes ? String(minutes) : (role ? String(deriveMatchMinutes({ ...row, role }, 90)) : ""),
+      goals: numMatch(row.goals) ? String(numMatch(row.goals)) : ""
+    };
+  }).filter((row) => row.date && row.score && (row.home || row.away));
 }
 
 function mergeSeasons(list) {
@@ -341,8 +454,21 @@ function mergeMatches(list) {
   const defaults = cleanMatches(DEFAULT.matches || []);
   if (!defaults.length) return cleanMatches(list);
   if (!list.length) return defaults;
-  const ids = new Set(list.map((m) => m.macId).filter(Boolean));
-  const merged = [...list];
+  const byMac = Object.fromEntries(defaults.map((m) => [m.macId, m]));
+  const ids = new Set();
+  const merged = list.map((match) => {
+    const clean = cleanMatches([match])[0];
+    if (!clean) return match;
+    ids.add(clean.macId);
+    const base = byMac[clean.macId];
+    if (!base) return clean;
+    const play = ["role", "subIn", "subOut", "minutes", "goals"];
+    const row = { ...clean };
+    play.forEach((key) => {
+      if (!row[key] && base[key]) row[key] = base[key];
+    });
+    return row;
+  });
   defaults.forEach((match) => {
     if (match.macId && !ids.has(match.macId)) merged.push(match);
   });
@@ -435,6 +561,10 @@ function sanitize(data, useFallback = true) {
     facts: mergeFacts(cleanList(source.facts, ["label", "value"], { label: 40, value: 80 })),
     stats: mergeStats(cleanList(source.stats, ["label", "value"], { label: 40, value: 80 })),
     tff: cleanTff(source, useFallback),
+    playModel: {
+      xgPer90: cleanLine(source.playModel?.xgPer90, 8, useFallback ? DEFAULT.playModel?.xgPer90 || "0.30" : "0.30"),
+      matchLength: cleanLine(source.playModel?.matchLength, 3, useFallback ? DEFAULT.playModel?.matchLength || "90" : "90")
+    },
     seasons: mergeSeasons(cleanSeasons(source.seasons)),
     matches: mergeMatches(cleanMatches(source.matches)),
     gameStats: mergeGameStats(cleanList(source.gameStats, ["label", "value"], { label: 40, value: 80 })),
@@ -841,21 +971,34 @@ function tffBlockHTML(person) {
   </section>`;
 }
 
-function seasonSummaryHTML(season) {
+function seasonSummaryHTML(season, person, matches) {
+  const agg = playingTimeAggregate(matches, season.id, person);
   const chips = [
     ["Maç", season.played],
-    ["Gol", season.goals],
+    ["Gol (TFF)", season.goals],
     ["G", season.wins],
     ["B", season.draws],
-    ["M", season.losses]
-  ].filter(([, value]) => value);
+    ["M", season.losses],
+    ["Süre", formatDurationTotal(agg.totalMin)],
+    ["İlk 11", String(agg.starts)],
+    ["Yedek giriş", String(agg.subEntries)],
+    ["Ort. dk", agg.appearances ? agg.avgMin.toFixed(1) : ""],
+    ["xG", agg.xg ? agg.xg.toFixed(2) : ""]
+  ].filter(([, value]) => value !== "" && value !== undefined);
   return `<div class="season-summary">
     <p class="season-title">${esc(season.label || season.id)} · ${esc(season.competition || "")}</p>
     ${chips.length ? `<div class="season-chips">${chips.map(([label, value]) => `<span class="season-chip"><em>${esc(label)}</em> ${esc(value)}</span>`).join("")}</div>` : ""}
   </div>`;
 }
 
-function matchesTableHTML(matches, seasonId) {
+function playingTimeIntroHTML(person) {
+  const xg = xgPer90Rate(person);
+  const length = matchLength(person);
+  return `<p class="match-note">Kadro ve süreler TFF maç detayından alınır. Gol beklentisi (xG) = (oynama dk ÷ ${length}) × ${xg.toFixed(2)} gol/90 (mevkiye göre düzenlenebilir).</p>`;
+}
+
+function matchesTableHTML(matches, seasonId, person) {
+  const length = matchLength(person);
   const rows = matches
     .filter((m) => !seasonId || m.season === seasonId)
     .slice()
@@ -871,22 +1014,53 @@ function matchesTableHTML(matches, seasonId) {
       ? `<a href="${esc(macUrl)}" target="_blank" rel="noopener noreferrer" class="score-link">${esc(match.score)}</a>`
       : esc(match.score);
     const when = [match.date, match.time].filter(Boolean).join(" · ");
+    const minutes = deriveMatchMinutes(match, length);
+    const xg = matchExpectedGoals(match, person);
+    const goals = numMatch(match.goals);
+    const role = cleanMatchRole(match.role);
     return `<tr>
-      <td class="match-when">${esc(when)}</td>
+      <td class="match-when">${macUrl ? `<a href="${esc(macUrl)}" target="_blank" rel="noopener noreferrer">${esc(when)}</a>` : esc(when)}</td>
       <td class="match-teams"><span class="${clubIsCisem(match.home) ? "is-us" : ""}">${esc(shortClubName(match.home))}</span>
         <span class="match-score">${scoreCell}</span>
         <span class="${clubIsCisem(match.away) ? "is-us" : ""}">${esc(shortClubName(match.away))}</span></td>
-      <td class="match-comp">${esc(match.competition)}</td>
+      <td class="match-play" title="Kadro">${esc(roleLabel(role))}</td>
+      <td class="match-play">${formatMinuteMark(match.subIn)}</td>
+      <td class="match-play">${formatMinuteMark(match.subOut)}</td>
+      <td class="match-play match-min"><strong>${minutes ? `${minutes}'` : "—"}</strong></td>
+      <td class="match-play">${goals || "—"}</td>
+      <td class="match-play match-xg">${minutes ? xg.toFixed(2) : "—"}</td>
       <td class="match-result${outcomeClass}" aria-label="Sonuç">${outcome ? esc(outcome) : "—"}</td>
     </tr>`;
   }).join("");
-  return `<div class="match-scroll" tabindex="0" aria-label="Maç listesi">
-    <table class="match-table">
-      <thead><tr><th>Tarih</th><th>Maç</th><th>Organizasyon</th><th></th></tr></thead>
+  return `${playingTimeIntroHTML(person)}
+  <div class="match-scroll" tabindex="0" aria-label="Maç listesi">
+    <table class="match-table match-table-play">
+      <thead><tr>
+        <th>Tarih</th><th>Maç</th><th>Kadro</th><th>Giriş</th><th>Çıkış</th><th>Dk</th><th>G</th><th>xG</th><th></th>
+      </tr></thead>
       <tbody>${body}</tbody>
     </table>
   </div>
   <p class="match-note">Milli maçlar bu listede yer almaz (TFF notu).</p>`;
+}
+
+function playingTimeStatsHTML(person, season) {
+  const agg = playingTimeAggregate(person.matches, season?.id, person);
+  if (!agg.appearances) return "";
+  const goalDelta = agg.goals - agg.xg;
+  const deltaLabel = goalDelta >= 0 ? `+${goalDelta.toFixed(2)}` : goalDelta.toFixed(2);
+  return `<section class="group playtime-block">
+    <h2>Oynama süresi</h2>
+    <div class="stats stats-wide">
+      <div class="stat"><span>Toplam süre</span><strong>${esc(formatDurationTotal(agg.totalMin))}</strong></div>
+      <div class="stat"><span>İlk 11 başlangıç</span><strong>${agg.starts}</strong></div>
+      <div class="stat"><span>Yedekten giriş</span><strong>${agg.subEntries}</strong></div>
+      <div class="stat"><span>Maç başına ort.</span><strong>${agg.avgMin.toFixed(1)}'</strong></div>
+      <div class="stat"><span>Maç golleri (kayıtlı)</span><strong>${agg.goals}</strong></div>
+      <div class="stat"><span>Gol beklentisi (xG)</span><strong>${agg.xg.toFixed(2)}</strong></div>
+      <div class="stat"><span>Gol − xG</span><strong>${deltaLabel}</strong></div>
+    </div>
+  </section>`;
 }
 
 function seasonsHTML(person) {
@@ -896,12 +1070,13 @@ function seasonsHTML(person) {
     return `<section class="group"><h2>Sezonlar</h2><p class="empty">Sezon özeti ve maç listesi henüz yazılmadı.</p></section>`;
   }
   if (!seasons.length) {
-    return `<section class="group"><h2>Maçlar</h2>${matchesTableHTML(allMatches)}</section>`;
+    return `<section class="group"><h2>Maçlar</h2>${matchesTableHTML(allMatches, "", person)}</section>`;
   }
   return seasons.map((season) => `<section class="group season-block">
     <h2>${esc(season.label || season.id)}</h2>
-    ${seasonSummaryHTML(season)}
-    ${matchesTableHTML(allMatches, season.id)}
+    ${seasonSummaryHTML(season, person, allMatches)}
+    ${playingTimeStatsHTML(person, season)}
+    ${matchesTableHTML(allMatches, season.id, person)}
   </section>`).join("");
 }
 
@@ -1006,6 +1181,8 @@ function editorHTML() {
         ${field("f-tff-license", "Lisans no", profile.tff?.licenseNo || "")}
         ${field("f-tff-kisi", "kisiID", profile.tff?.kisiId || "")}
         ${field("f-tff-club", "TFF kulüp adı", profile.tff?.club || "", "wide")}
+        ${field("f-xg-per90", "Gol beklentisi (gol/90)", profile.playModel?.xgPer90 || "0.30")}
+        ${field("f-match-length", "Maç süresi (dk)", profile.playModel?.matchLength || "90")}
       </div>
       <h2>Saha</h2>
       <div class="form-grid">
@@ -1051,7 +1228,7 @@ function editorHTML() {
       <p class="empty">Her sezon için maç, gol ve G/B/M sayıları. id: 2025-26 gibi.</p>
       ${rowsHTML("seasons", profile.seasons || [])}
       <h2>Maç listesi</h2>
-      <p class="empty">TFF’den aktarılan satırlar. macId ile TFF maç sayfasına bağlanır.</p>
+      <p class="empty">TFF maç detayı: role = ilk11 veya yedek; subIn / subOut dakikaları; minutes boşsa hesaplanır.</p>
       ${rowsHTML("matches", profile.matches || [])}
       <h2>Kupalar ve ödüller</h2>
       ${rowsHTML("honours", profile.honours)}
@@ -1148,6 +1325,10 @@ function readForm(useFallback = false) {
       licenseNo: value("f-tff-license"),
       kisiId: value("f-tff-kisi"),
       club: value("f-tff-club")
+    },
+    playModel: {
+      xgPer90: value("f-xg-per90"),
+      matchLength: value("f-match-length")
     },
     number: value("f-number"),
     position: value("f-position"),
