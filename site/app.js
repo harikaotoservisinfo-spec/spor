@@ -96,6 +96,20 @@ function safeColor(value, fallback) {
   return /^#[0-9a-fA-F]{6}$/.test(String(value || "")) ? String(value) : fallback;
 }
 
+function safeAskfUrl(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:") return "";
+    const host = url.hostname.replace(/^www\./i, "").toLowerCase();
+    if (host !== "antalyaaskf.org") return "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 function safeTffUrl(value) {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
@@ -300,7 +314,7 @@ function cleanAskf(source, useFallback) {
     return Array.isArray(list) ? list.slice(0, max) : [];
   };
   return {
-    profileUrl: cleanLine(raw.profileUrl, 120, useFallback ? base.profileUrl || "" : "") || "https://antalyaaskf.org/bilgi-bankasi/oyuncu-bilgisi/2049878/kuzey-akinci",
+    profileUrl: safeAskfUrl(raw.profileUrl) || (useFallback ? safeAskfUrl(base.profileUrl) : "") || safeAskfUrl("https://antalyaaskf.org/bilgi-bankasi/oyuncu-bilgisi/2049878/kuzey-akinci"),
     oyid: pick("oyid", 12),
     licenseNo: pick("licenseNo", 16),
     totals,
@@ -1168,17 +1182,63 @@ function seasonsHTML(person) {
   </section>`).join("");
 }
 
+function kpiIcon(kind) {
+  const icons = {
+    matches: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="m4.5 12.5 3.5 3.5L19.5 4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+    goals: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+    yellow: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="16" rx="2" fill="currentColor" opacity="0.9"/></svg>',
+    red: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="16" rx="2" fill="currentColor" opacity="0.85"/></svg>'
+  };
+  return icons[kind] || "";
+}
+
 function askfTotalsHTML(askf) {
   const t = askf.totals || {};
-  const chips = [
-    ["Maç", t.played],
-    ["Gol", t.goals],
-    ["Sarı", t.yellow],
-    ["Kırmızı", t.red]
-  ].filter(([, v]) => v !== undefined && v !== "");
-  return chips.length
-    ? `<div class="season-chips stats-hero-chips">${chips.map(([label, value]) => `<span class="season-chip stats-hero-chip"><em>${esc(label)}</em> ${esc(String(value))}</span>`).join("")}</div>`
-    : "";
+  const played = numMatch(t.played);
+  const goals = numMatch(t.goals);
+  const yellow = numMatch(t.yellow);
+  const red = numMatch(t.red);
+  if (!played && !goals && !yellow && !red) return "";
+  const gpg = played && goals ? (goals / played).toFixed(2) : "";
+  const cards = [
+    {
+      kind: "matches",
+      label: "Maç",
+      value: String(t.played ?? played),
+      hint: "ASKF kariyer toplamı",
+      featured: true
+    },
+    {
+      kind: "goals",
+      label: "Gol",
+      value: String(t.goals ?? goals),
+      hint: gpg ? `Maç başına ${gpg}` : "Kariyer golleri",
+      featured: true
+    },
+    {
+      kind: "yellow",
+      label: "Sarı kart",
+      value: String(t.yellow ?? yellow),
+      hint: yellow ? "Lig disiplini" : "Temiz kayıt"
+    },
+    {
+      kind: "red",
+      label: "Kırmızı kart",
+      value: String(t.red ?? red),
+      hint: red ? "Dikkat" : "Temiz kayıt"
+    }
+  ];
+  return `<div class="kpi-bento" role="list" aria-label="Kariyer özeti">
+    ${cards.map((card) => `<article class="kpi-card kpi-${card.kind}${card.featured ? " kpi-featured" : ""}" role="listitem">
+      <div class="kpi-card-shine" aria-hidden="true"></div>
+      <div class="kpi-card-body">
+        <span class="kpi-icon">${kpiIcon(card.kind)}</span>
+        <p class="kpi-value">${esc(card.value)}</p>
+        <p class="kpi-label">${esc(card.label)}</p>
+        <p class="kpi-hint">${esc(card.hint)}</p>
+      </div>
+    </article>`).join("")}
+  </div>`;
 }
 
 function askfCareerTableHTML(askf) {
@@ -1291,7 +1351,7 @@ function askfCardsTableHTML(askf) {
 
 function askfBlockHTML(person) {
   const askf = person.askf || {};
-  const url = askf.profileUrl || "";
+  const url = safeAskfUrl(askf.profileUrl);
   if (!askf.matches?.length && !askf.career?.length) return "";
   return `<section class="group askf-block stats-dashboard">
     <div class="stats-source-head">
