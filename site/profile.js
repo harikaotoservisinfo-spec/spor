@@ -111,6 +111,7 @@ window.SAHA_DEFAULT = {
     }
   ],
   matches: typeof window.SAHA_MATCHES_2025_26 !== "undefined" ? window.SAHA_MATCHES_2025_26 : [],
+  goalEvents: typeof window.SAHA_GOALS_2025_26 !== "undefined" ? window.SAHA_GOALS_2025_26 : [],
   stats: [
     { label: "Ana mevki", value: "Sağ kanat" },
     { label: "Forma", value: "9" },

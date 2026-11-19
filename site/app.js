@@ -30,6 +30,7 @@ const ROW_FIELDS = {
   gameStats: ["label", "value"],
   seasons: ["id", "label", "competition", "played", "goals", "wins", "draws", "losses"],
   matches: ["season", "date", "time", "home", "away", "score", "competition", "macId", "role", "subIn", "subOut", "minutes", "goals"],
+  goalEvents: ["season", "macId", "minute", "type", "date"],
   honours: ["year", "title", "detail"],
   values: ["title", "text"],
   dreams: ["title", "text"],
@@ -67,8 +68,12 @@ const PLACEHOLDERS = {
   role: "ilk11",
   subIn: "40",
   subOut: "57",
-  minutes: "57"
+  minutes: "57",
+  minute: "67",
+  type: "F - Ayak"
 };
+
+const GOAL_LIMITS = { season: 12, macId: 12, minute: 4, type: 24, date: 16 };
 
 const DEFAULT = window.SAHA_DEFAULT;
 let profile;
@@ -390,6 +395,8 @@ function formatDurationTotal(minutes) {
 function playingTimeAggregate(matches, seasonId, person) {
   const length = matchLength(person);
   const rows = (matches || []).filter((m) => !seasonId || m.season === seasonId);
+  const goalList = (person.goalEvents || []).filter((g) => !seasonId || g.season === seasonId);
+  const goalsFromEvents = goalList.length;
   let totalMin = 0;
   let goals = 0;
   let xg = 0;
@@ -409,6 +416,7 @@ function playingTimeAggregate(matches, seasonId, person) {
     }
   });
   const appearances = rows.filter((m) => deriveMatchMinutes(m, length) > 0).length;
+  if (goalsFromEvents) goals = goalsFromEvents;
   return {
     totalMin,
     goals,
@@ -448,6 +456,62 @@ function mergeSeasons(list) {
     if (season.id && !ids.has(season.id)) merged.push(season);
   });
   return merged;
+}
+
+function cleanGoalEvents(list) {
+  return cleanList(list, ROW_FIELDS.goalEvents, GOAL_LIMITS, 120).map((row) => ({
+    ...row,
+    macId: String(row.macId || "").replace(/\D/g, "").slice(0, 12),
+    minute: numMatch(row.minute) ? String(numMatch(row.minute)) : ""
+  })).filter((row) => row.macId && row.minute);
+}
+
+function mergeGoalEvents(list) {
+  const defaults = cleanGoalEvents(DEFAULT.goalEvents || []);
+  if (!defaults.length) return cleanGoalEvents(list);
+  if (!list.length) return defaults;
+  const keys = new Set(list.map((g) => `${g.macId}-${g.minute}`));
+  const merged = [...list];
+  defaults.forEach((goal) => {
+    const key = `${goal.macId}-${goal.minute}`;
+    if (!keys.has(key)) merged.push(goal);
+  });
+  return cleanGoalEvents(merged);
+}
+
+function matchByMacId(matches, macId) {
+  return (matches || []).find((m) => m.macId === macId) || null;
+}
+
+function goalsSectionHTML(person, seasonId) {
+  const goals = (person.goalEvents || []).filter((g) => !seasonId || g.season === seasonId);
+  if (!goals.length) return "";
+  const rows = goals
+    .slice()
+    .sort((a, b) => parseMatchDate(b.date) - parseMatchDate(a.date) || numMatch(b.minute) - numMatch(a.minute));
+  const body = rows.map((goal) => {
+    const match = matchByMacId(person.matches, goal.macId);
+    const macUrl = goal.macId ? `https://www.tff.org/Default.aspx?pageId=29&macId=${encodeURIComponent(goal.macId)}` : "";
+    const label = match
+      ? `${shortClubName(match.home)} – ${match.score} – ${shortClubName(match.away)}`
+      : `Maç ${goal.macId}`;
+    return `<tr>
+      <td>${esc(goal.date || match?.date || "")}</td>
+      <td>${macUrl ? `<a href="${esc(macUrl)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>` : esc(label)}</td>
+      <td class="match-play">${esc(goal.minute)}'</td>
+      <td class="match-play">${esc(goal.type || "F - Ayak")}</td>
+    </tr>`;
+  }).join("");
+  return `<section class="group goals-block">
+    <h2>Attığı goller</h2>
+    <p class="match-note">TFF oyuncu profili — Attığı Goller sekmesi (12 kayıt).</p>
+    <div class="match-scroll" tabindex="0">
+      <table class="match-table">
+        <thead><tr><th>Tarih</th><th>Maç</th><th>Dk</th><th>Tip</th></tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>
+  </section>`;
 }
 
 function mergeMatches(list) {
@@ -567,6 +631,7 @@ function sanitize(data, useFallback = true) {
     },
     seasons: mergeSeasons(cleanSeasons(source.seasons)),
     matches: mergeMatches(cleanMatches(source.matches)),
+    goalEvents: mergeGoalEvents(cleanGoalEvents(source.goalEvents)),
     gameStats: mergeGameStats(cleanList(source.gameStats, ["label", "value"], { label: 40, value: 80 })),
     honours: cleanList(source.honours, ["year", "title", "detail"], { year: 12, title: 60, detail: 180 }),
     values: cleanList(source.values, ["title", "text"], { title: 40, text: 240 }),
@@ -1056,7 +1121,7 @@ function playingTimeStatsHTML(person, season) {
       <div class="stat"><span>İlk 11 başlangıç</span><strong>${agg.starts}</strong></div>
       <div class="stat"><span>Yedekten giriş</span><strong>${agg.subEntries}</strong></div>
       <div class="stat"><span>Maç başına ort.</span><strong>${agg.avgMin.toFixed(1)}'</strong></div>
-      <div class="stat"><span>Maç golleri (kayıtlı)</span><strong>${agg.goals}</strong></div>
+      <div class="stat"><span>Maç golleri (TFF)</span><strong>${agg.goals}</strong></div>
       <div class="stat"><span>Gol beklentisi (xG)</span><strong>${agg.xg.toFixed(2)}</strong></div>
       <div class="stat"><span>Gol − xG</span><strong>${deltaLabel}</strong></div>
     </div>
@@ -1076,6 +1141,7 @@ function seasonsHTML(person) {
     <h2>${esc(season.label || season.id)}</h2>
     ${seasonSummaryHTML(season, person, allMatches)}
     ${playingTimeStatsHTML(person, season)}
+    ${goalsSectionHTML(person, season.id)}
     ${matchesTableHTML(allMatches, season.id, person)}
   </section>`).join("");
 }
@@ -1230,6 +1296,9 @@ function editorHTML() {
       <h2>Maç listesi</h2>
       <p class="empty">TFF maç detayı: role = ilk11 veya yedek; subIn / subOut dakikaları; minutes boşsa hesaplanır.</p>
       ${rowsHTML("matches", profile.matches || [])}
+      <h2>Attığı goller</h2>
+      <p class="empty">TFF gol satırları — macId ve dakika.</p>
+      ${rowsHTML("goalEvents", profile.goalEvents || [])}
       <h2>Kupalar ve ödüller</h2>
       ${rowsHTML("honours", profile.honours)}
       <h2>Duruş</h2>
@@ -1351,6 +1420,7 @@ function readForm(useFallback = false) {
     gameStats: readRows("gameStats"),
     seasons: readRows("seasons"),
     matches: readRows("matches"),
+    goalEvents: readRows("goalEvents"),
     stats: readRows("stats"),
     honours: readRows("honours"),
     values: readRows("values"),
