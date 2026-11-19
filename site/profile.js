@@ -1,4 +1,5 @@
 window.SAHA_DEFAULT = {
+  adminPin: "ka2026",
   firstName: "Kuzey",
   lastName: "Akıncı",
   number: "9",
