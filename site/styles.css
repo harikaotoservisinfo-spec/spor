@@ -1032,6 +1032,10 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   padding: 1rem 1rem 1.1rem;
 }
 
+.chart-card + .chart-card {
+  margin-top: 0.85rem;
+}
+
 .chart-card-title {
   margin: 0 0 0.35rem;
   font-size: 0.95rem;
@@ -1102,6 +1106,41 @@ body.is-home.scene-kisi .hint { opacity: 1; }
 
 .chart-bar-xg {
   fill: color-mix(in srgb, var(--lime) 78%, #1a2818);
+}
+
+.chart-bar-capacity {
+  fill: color-mix(in srgb, var(--ice) 22%, transparent);
+  stroke: color-mix(in srgb, var(--ice) 45%, transparent);
+  stroke-width: 1;
+}
+
+.chart-bar-actual {
+  fill: color-mix(in srgb, var(--lime) 70%, #142018);
+}
+
+.chart-bar-starts {
+  fill: color-mix(in srgb, var(--lime) 65%, #142018);
+}
+
+.chart-bar-subs {
+  fill: color-mix(in srgb, var(--ice) 55%, #142018);
+}
+
+.chart-swatch-capacity {
+  background: color-mix(in srgb, var(--ice) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ice) 50%, transparent);
+}
+
+.chart-swatch-actual {
+  background: color-mix(in srgb, var(--lime) 75%, #1a2818);
+}
+
+.chart-swatch-starts {
+  background: color-mix(in srgb, var(--lime) 70%, #1a2818);
+}
+
+.chart-swatch-subs {
+  background: color-mix(in srgb, var(--ice) 55%, #1a2818);
 }
 
 .chart-dot-goals {

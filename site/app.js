@@ -1552,95 +1552,160 @@ function tffSeasonCardBody(person, season) {
     ${tffUrl ? `<p class="match-note season-source-link"><a href="${esc(tffUrl)}" target="_blank" rel="noopener noreferrer">TFF oyuncu profili</a></p>` : ""}`;
 }
 
-function seasonMetricsSeries(person) {
-  const items = buildSeasonCardItems(person);
-  const askf = person.askf || {};
-  return items
-    .map((item) => {
-      let xg = 0;
-      let goals = 0;
-      let played = 0;
-      let label;
-      let league;
-      if (item.kind === "tff") {
-        const agg = playingTimeAggregate(person.matches, item.tffSeason.id, person);
-        xg = agg.xg;
-        goals = agg.goals;
-        played = numMatch(item.tffSeason.played);
-        label = item.seasonDisplay;
-        league = item.competition;
-      } else {
-        const { season, competition } = parseCareerLeague(item.askfRow.league);
-        const matches = askfLeagueMatches(askf, season, competition);
-        const leagueGoals = askfLeagueGoals(askf, season, competition);
-        const agg = askfPlayingTimeAggregate(matches, leagueGoals.length, person);
-        xg = agg.xg;
-        goals = agg.goals;
-        played = numMatch(item.askfRow.played);
-        label = season;
-        league = competition;
-      }
-      return {
-        sortSeason: item.sortSeason,
-        sortComp: item.competition,
-        label,
-        league,
-        xg,
-        goals,
-        played,
-        kind: item.kind
-      };
-    })
-    .sort((a, b) => {
-      const bySeason = a.sortSeason.localeCompare(b.sortSeason, "tr");
-      return bySeason !== 0 ? bySeason : a.sortComp.localeCompare(b.sortComp, "tr");
-    });
+function formatSeasonYearLabel(sortSeason) {
+  const m = String(sortSeason || "").match(/^(\d{4})-(\d{4})$/);
+  if (m) return `${m[1]}-${m[2].slice(2)}`;
+  return String(sortSeason || "");
 }
 
-function shortLeagueLabel(league, max = 22) {
-  const t = String(league || "").trim();
-  if (t.length <= max) return t;
-  return `${t.slice(0, max - 1)}…`;
+function seasonCapacityTotals(matches, person) {
+  let actual = 0;
+  let capacity = 0;
+  (matches || []).forEach((match) => {
+    const full = matchLengthForMatch(match, person);
+    const min = deriveMatchMinutes(match, person);
+    if (min <= 0) return;
+    actual += min;
+    capacity += full;
+  });
+  return { actual, capacity };
+}
+
+function seasonYearMetricsSeries(person) {
+  const items = buildSeasonCardItems(person);
+  const askf = person.askf || {};
+  const buckets = new Map();
+  items.forEach((item) => {
+    const key = item.sortSeason;
+    let matches;
+    let agg;
+    if (item.kind === "tff") {
+      matches = (person.matches || []).filter((m) => m.season === item.tffSeason.id);
+      agg = playingTimeAggregate(person.matches, item.tffSeason.id, person);
+    } else {
+      const { season, competition } = parseCareerLeague(item.askfRow.league);
+      matches = askfLeagueMatches(askf, season, competition);
+      const leagueGoals = askfLeagueGoals(askf, season, competition);
+      agg = askfPlayingTimeAggregate(matches, leagueGoals.length, person);
+    }
+    const cap = seasonCapacityTotals(matches, person);
+    if (!buckets.has(key)) {
+      buckets.set(key, {
+        sortSeason: key,
+        label: formatSeasonYearLabel(key),
+        actualMin: 0,
+        capacityMin: 0,
+        starts: 0,
+        subEntries: 0,
+        xg: 0,
+        goals: 0
+      });
+    }
+    const row = buckets.get(key);
+    row.actualMin += cap.actual;
+    row.capacityMin += cap.capacity;
+    row.starts += agg.starts;
+    row.subEntries += agg.subEntries;
+    row.xg += agg.xg;
+    row.goals += agg.goals;
+  });
+  return [...buckets.values()].sort((a, b) => a.sortSeason.localeCompare(b.sortSeason, "tr"));
+}
+
+function chartGridHTML(cap, padL, padR, padT, innerH, w) {
+  return [0, 0.25, 0.5, 0.75, 1]
+    .map((t) => {
+      const y = padT + innerH * (1 - t);
+      const raw = cap * t;
+      const val = cap >= 100 ? Math.round(raw) : raw >= 10 ? raw.toFixed(0) : raw.toFixed(1);
+      return `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" class="chart-grid"/>
+      <text x="${padL - 8}" y="${y + 4}" class="chart-axis" text-anchor="end">${val}</text>`;
+    })
+    .join("");
+}
+
+function dualSeasonBarChartHTML(series, opts) {
+  const {
+    ariaLabel,
+    valueA,
+    valueB,
+    classA,
+    classB,
+    formatVal = (n) => String(n),
+    groupGap = 4
+  } = opts;
+  if (!series.length) return `<p class="empty">Grafik için sezon verisi yok.</p>`;
+  const maxVal = Math.max(...series.map((d) => Math.max(valueA(d), valueB(d))), 1);
+  const cap = Math.ceil(maxVal * 1.15);
+  const w = Math.max(520, 72 * series.length + 80);
+  const h = 248;
+  const padL = 42;
+  const padR = 16;
+  const padT = 20;
+  const padB = 56;
+  const innerW = w - padL - padR;
+  const innerH = h - padT - padB;
+  const slot = innerW / series.length;
+  const barW = Math.min(16, (slot - groupGap) / 2.2);
+  const gridLines = chartGridHTML(cap, padL, padR, padT, innerH, w);
+  const bars = series
+    .map((d, i) => {
+      const cx = padL + slot * i + slot / 2;
+      const aVal = valueA(d);
+      const bVal = valueB(d);
+      const aH = (aVal / cap) * innerH;
+      const bH = (bVal / cap) * innerH;
+      const xA = cx - barW - groupGap / 2;
+      const xB = cx + groupGap / 2;
+      const title = `${d.label}: ${formatVal(aVal)} / ${formatVal(bVal)}`;
+      return `<g class="chart-bar-group">
+        <rect class="chart-bar ${classA}" x="${xA}" y="${padT + innerH - aH}" width="${barW}" height="${Math.max(aH, 0.5)}" rx="2">
+          <title>${esc(title)}</title>
+        </rect>
+        <rect class="chart-bar ${classB}" x="${xB}" y="${padT + innerH - bH}" width="${barW}" height="${Math.max(bH, 0.5)}" rx="2">
+          <title>${esc(title)}</title>
+        </rect>
+        <text x="${cx}" y="${h - padB + 16}" class="chart-label-season" text-anchor="middle">${esc(d.label)}</text>
+      </g>`;
+    })
+    .join("");
+  return `<div class="chart-scroll" tabindex="0" aria-label="${esc(ariaLabel)}">
+    <svg class="stats-chart" viewBox="0 0 ${w} ${h}" role="img" aria-hidden="true">
+      ${gridLines}
+      <line x1="${padL}" y1="${padT + innerH}" x2="${w - padR}" y2="${padT + innerH}" class="chart-axis-line"/>
+      ${bars}
+    </svg>
+  </div>`;
 }
 
 function xgTrendChartHTML(series) {
   if (!series.length) return `<p class="empty">Grafik için sezon verisi yok.</p>`;
   const maxVal = Math.max(...series.map((d) => Math.max(d.xg, d.goals)), 0.3);
   const cap = Math.ceil(maxVal * 1.2 * 10) / 10;
-  const w = 720;
-  const h = 260;
+  const w = Math.max(520, 72 * series.length + 80);
+  const h = 248;
   const padL = 42;
   const padR = 16;
   const padT = 20;
-  const padB = 88;
+  const padB = 56;
   const innerW = w - padL - padR;
   const innerH = h - padT - padB;
   const slot = innerW / series.length;
-  const barW = Math.min(28, slot * 0.55);
-  const gridLines = [0, 0.25, 0.5, 0.75, 1].map((t) => {
-    const y = padT + innerH * (1 - t);
-    const val = (cap * t).toFixed(1);
-    return `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" class="chart-grid"/>
-      <text x="${padL - 8}" y="${y + 4}" class="chart-axis" text-anchor="end">${val}</text>`;
-  }).join("");
+  const barW = Math.min(24, slot * 0.45);
+  const gridLines = chartGridHTML(cap, padL, padR, padT, innerH, w);
   const bars = series
     .map((d, i) => {
       const cx = padL + slot * i + slot / 2;
       const xgH = (d.xg / cap) * innerH;
       const goalH = (d.goals / cap) * innerH;
       const x = cx - barW / 2;
-      const yXg = padT + innerH - xgH;
-      const yGoal = padT + innerH - goalH;
-      const seasonLabel = esc(d.label.replace(/–/g, "-"));
-      const leagueLabel = esc(shortLeagueLabel(d.league, 18));
-      const title = `${d.label} · ${d.league}: xG ${d.xg.toFixed(2)}, gol ${d.goals}`;
-      return `<g class="chart-bar-group" role="img" aria-label="${esc(title)}">
-        <rect class="chart-bar chart-bar-xg" x="${x}" y="${yXg}" width="${barW}" height="${Math.max(xgH, 0.5)}" rx="3">
+      const title = `${d.label}: xG ${d.xg.toFixed(2)}, gol ${d.goals}`;
+      return `<g class="chart-bar-group">
+        <rect class="chart-bar chart-bar-xg" x="${x}" y="${padT + innerH - xgH}" width="${barW}" height="${Math.max(xgH, 0.5)}" rx="3">
           <title>${esc(title)}</title>
         </rect>
-        <circle class="chart-dot-goals" cx="${cx}" cy="${yGoal}" r="4.5"><title>${esc(title)}</title></circle>
-        <text x="${cx}" y="${h - padB + 14}" class="chart-label-season" text-anchor="middle">${seasonLabel}</text>
-        <text x="${cx}" y="${h - padB + 28}" class="chart-label-league" text-anchor="middle">${leagueLabel}</text>
+        <circle class="chart-dot-goals" cx="${cx}" cy="${padT + innerH - goalH}" r="4.5"><title>${esc(title)}</title></circle>
+        <text x="${cx}" y="${h - padB + 16}" class="chart-label-season" text-anchor="middle">${esc(d.label)}</text>
       </g>`;
     })
     .join("");
@@ -1658,13 +1723,53 @@ function xgTrendChartHTML(series) {
     </div>`;
 }
 
+function playingTimeSeasonChartHTML(series) {
+  const legend = `<div class="chart-legend" aria-hidden="true">
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-capacity"></span> Maç süresi üst sınırı (dk)</span>
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-actual"></span> Oyunda kaldığı süre (dk)</span>
+  </div>`;
+  return `${legend}${dualSeasonBarChartHTML(series, {
+    ariaLabel: "Sezonlara göre oyun süresi",
+    valueA: (d) => d.capacityMin,
+    valueB: (d) => d.actualMin,
+    classA: "chart-bar-capacity",
+    classB: "chart-bar-actual",
+    formatVal: (n) => `${n} dk`
+  })}`;
+}
+
+function rosterSeasonChartHTML(series) {
+  const legend = `<div class="chart-legend" aria-hidden="true">
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-starts"></span> İlk 11 başlangıç</span>
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-subs"></span> Yedekten giriş</span>
+  </div>`;
+  return `${legend}${dualSeasonBarChartHTML(series, {
+    ariaLabel: "Sezonlara göre kadro",
+    valueA: (d) => d.starts,
+    valueB: (d) => d.subEntries,
+    classA: "chart-bar-starts",
+    classB: "chart-bar-subs",
+    formatVal: (n) => String(n)
+  })}`;
+}
+
 function statsChartsPanelHTML(person) {
-  const series = seasonMetricsSeries(person);
+  const series = seasonYearMetricsSeries(person);
   return `<div class="stats-charts-stack" data-stats-panel="grafikler" id="stats-grafikler" hidden>
     <article class="chart-card">
       <h3 class="chart-card-title">Gol beklentisi — kronoloji</h3>
-      <p class="match-note season-inline-note">İlk sezondan bugüne, lig lig xG (süre + gol/90 modeli). Nokta: gerçek gol sayısı (aynı ölçek).</p>
+      <p class="match-note season-inline-note">Sezon yılı bazında (tüm ligler birlikte). xG: süre + gol/90 modeli; nokta: gerçek gol.</p>
       ${xgTrendChartHTML(series)}
+    </article>
+    <article class="chart-card">
+      <h3 class="chart-card-title">Oyun süresi</h3>
+      <p class="match-note season-inline-note">Çubuk: o sezonda oynadığı maçlarda mümkün olan süre (yaş ligine göre tam maç). Yan çubuk: sahada kaldığı toplam dk.</p>
+      ${playingTimeSeasonChartHTML(series)}
+    </article>
+    <article class="chart-card">
+      <h3 class="chart-card-title">Kadro</h3>
+      <p class="match-note season-inline-note">İlk 11 başlangıç ve yedekten giriş sayıları — sezon yılı toplamı.</p>
+      ${rosterSeasonChartHTML(series)}
     </article>
   </div>`;
 }
