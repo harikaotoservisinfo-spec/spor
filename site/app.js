@@ -319,7 +319,7 @@ function cleanAskf(source, useFallback) {
     licenseNo: pick("licenseNo", 16),
     totals,
     career: mergeList(raw.career, base.career, 24),
-    matches: mergeList(raw.matches, base.matches, 120),
+    matches: mergeList(raw.matches, base.matches, 120).map((row) => normalizeAskfMatchRow(row, source)),
     goals: mergeList(raw.goals, base.goals, 120),
     cards: mergeList(raw.cards, base.cards, 24)
   };
@@ -385,26 +385,77 @@ function matchLength(person) {
   return n > 0 ? n : 90;
 }
 
+/** TFF amatör / gelişim — tam maç süresi (dk), kaynak: TFF yaş lig esasları */
+const YOUTH_FULL_MATCH_MINUTES = {
+  11: 40,
+  12: 60,
+  13: 60,
+  14: 70,
+  15: 70,
+  16: 80,
+  17: 90,
+  19: 90
+};
+
+function youthAgeFromCompetition(text) {
+  const comp = String(text || "").toLocaleUpperCase("tr");
+  let m = comp.match(/\bU\s*(\d{1,2})\b/);
+  if (m) return Number(m[1]);
+  m = comp.match(/\b(\d{1,2})\s*YAŞ\b/);
+  return m ? Number(m[1]) : 0;
+}
+
+function matchLengthForMatch(match, person) {
+  const comp = match?.competition || match?.league || "";
+  const age = youthAgeFromCompetition(comp);
+  if (!age) return matchLength(person);
+  const gelisim = /GELİŞİM|GELISIM/.test(String(comp).toLocaleUpperCase("tr"));
+  if (age === 12 && /ŞENLİK|MİNİK|MINIK/.test(String(comp).toLocaleUpperCase("tr"))) return 50;
+  if (gelisim) {
+    if (age === 14) return 70;
+    if (age === 15 || age === 16) return 80;
+    if (age >= 17) return 90;
+  }
+  return YOUTH_FULL_MATCH_MINUTES[age] ?? matchLength(person);
+}
+
+function resolveMatchLengthArg(match, personOrLength) {
+  if (typeof personOrLength === "number" && personOrLength > 0) return personOrLength;
+  if (personOrLength && typeof personOrLength === "object") return matchLengthForMatch(match, personOrLength);
+  return matchLengthForMatch(match, {});
+}
+
 function xgPer90Rate(person) {
   const n = Number(String(person?.playModel?.xgPer90 ?? "0.30").replace(",", "."));
   return Number.isFinite(n) && n >= 0 ? n : 0.3;
 }
 
-function deriveMatchMinutes(match, length = 90) {
-  const stored = numMatch(match.minutes);
-  if (stored) return stored;
+function deriveMatchMinutes(match, personOrLength = 90) {
+  const full = resolveMatchLengthArg(match, personOrLength);
   const subIn = numMatch(match.subIn);
   const subOut = numMatch(match.subOut);
   const role = cleanMatchRole(match.role);
-  if (role === "ilk11") return subOut || length;
-  if (role === "yedek") return subIn ? (subOut || length) - subIn : 0;
-  return 0;
+  let computed = 0;
+  if (role === "ilk11") computed = subOut || full;
+  else if (role === "yedek") computed = subIn ? (subOut || full) - subIn : 0;
+  const stored = numMatch(match.minutes);
+  if (subIn || subOut) return computed;
+  if (stored && stored <= full) return stored;
+  if (stored && stored > full) return full;
+  return computed;
 }
 
 function matchExpectedGoals(match, person) {
-  const length = matchLength(person);
-  const minutes = deriveMatchMinutes(match, length);
-  return (minutes / length) * xgPer90Rate(person);
+  const minutes = deriveMatchMinutes(match, person);
+  return (minutes / 90) * xgPer90Rate(person);
+}
+
+function normalizeAskfMatchRow(match, person) {
+  if (!match || typeof match !== "object") return match;
+  const row = { ...match };
+  const mins = deriveMatchMinutes(row, person);
+  if (mins) row.minutes = String(mins);
+  return row;
 }
 
 function roleLabel(role) {
@@ -428,7 +479,6 @@ function formatDurationTotal(minutes) {
 }
 
 function playingTimeAggregate(matches, seasonId, person) {
-  const length = matchLength(person);
   const rows = (matches || []).filter((m) => !seasonId || m.season === seasonId);
   const goalList = (person.goalEvents || []).filter((g) => !seasonId || g.season === seasonId);
   const goalsFromEvents = goalList.length;
@@ -439,7 +489,7 @@ function playingTimeAggregate(matches, seasonId, person) {
   let subEntries = 0;
   let benchUnused = 0;
   rows.forEach((match) => {
-    const minutes = deriveMatchMinutes(match, length);
+    const minutes = deriveMatchMinutes(match, person);
     totalMin += minutes;
     goals += numMatch(match.goals);
     xg += matchExpectedGoals(match, person);
@@ -450,7 +500,7 @@ function playingTimeAggregate(matches, seasonId, person) {
       else benchUnused += 1;
     }
   });
-  const appearances = rows.filter((m) => deriveMatchMinutes(m, length) > 0).length;
+  const appearances = rows.filter((m) => deriveMatchMinutes(m, person) > 0).length;
   if (goalsFromEvents) goals = goalsFromEvents;
   return {
     totalMin,
@@ -467,21 +517,20 @@ function playingTimeAggregate(matches, seasonId, person) {
 }
 
 function askfPlayingTimeAggregate(matches, goalCount, person) {
-  const length = matchLength(person);
   const rows = matches || [];
   let totalMin = 0;
   let xg = 0;
   let starts = 0;
   let subEntries = 0;
   rows.forEach((match) => {
-    const minutes = deriveMatchMinutes(match, length);
+    const minutes = deriveMatchMinutes(match, person);
     totalMin += minutes;
     xg += matchExpectedGoals(match, person);
     const role = cleanMatchRole(match.role);
     if (role === "ilk11") starts += 1;
     else if (role === "yedek" && (minutes > 0 || numMatch(match.subIn))) subEntries += 1;
   });
-  const appearances = rows.filter((m) => deriveMatchMinutes(m, length) > 0).length;
+  const appearances = rows.filter((m) => deriveMatchMinutes(m, person) > 0).length;
   const goals = goalCount ?? rows.reduce((sum, m) => sum + numMatch(m.goals), 0);
   return {
     totalMin,
@@ -504,7 +553,7 @@ function cleanMatches(list) {
       role,
       subIn: numMatch(row.subIn) ? String(numMatch(row.subIn)) : "",
       subOut: numMatch(row.subOut) ? String(numMatch(row.subOut)) : "",
-      minutes: minutes ? String(minutes) : (role ? String(deriveMatchMinutes({ ...row, role }, 90)) : ""),
+      minutes: minutes ? String(minutes) : (role ? String(deriveMatchMinutes({ ...row, role }, { playModel: { matchLength: "90" } })) : ""),
       goals: numMatch(row.goals) ? String(numMatch(row.goals)) : ""
     };
   }).filter((row) => row.date && row.score && (row.home || row.away));
@@ -1143,7 +1192,6 @@ function playingTimeIntroHTML(person) {
 
 function matchesTableHTML(matches, seasonId, person, opts = {}) {
   const { compact = false, skipIntro = false, skipFooter = false } = opts;
-  const length = matchLength(person);
   const rows = matches
     .filter((m) => !seasonId || m.season === seasonId)
     .slice()
@@ -1159,7 +1207,7 @@ function matchesTableHTML(matches, seasonId, person, opts = {}) {
       ? `<a href="${esc(macUrl)}" target="_blank" rel="noopener noreferrer" class="score-link">${esc(match.score)}</a>`
       : esc(match.score);
     const when = [match.date, match.time].filter(Boolean).join(" · ");
-    const minutes = deriveMatchMinutes(match, length);
+    const minutes = deriveMatchMinutes(match, person);
     const xg = matchExpectedGoals(match, person);
     const goals = numMatch(match.goals);
     const role = cleanMatchRole(match.role);
@@ -1337,7 +1385,7 @@ function askfSeasonMatchRows(matches, person) {
   if (!matches.length) return `<p class="empty">Bu lig için maç kaydı yok.</p>`;
   const body = matches.map((match) => {
     const role = match.role ? roleLabel(match.role) : "—";
-    const minutes = person ? deriveMatchMinutes(match, matchLength(person)) : numMatch(match.minutes);
+    const minutes = person ? deriveMatchMinutes(match, person) : numMatch(match.minutes);
     const mins = minutes ? `${minutes}'` : (match.minutes ? `${match.minutes}'` : "—");
     const xg = person && minutes ? matchExpectedGoals(match, person).toFixed(2) : "—";
     const goals = numMatch(match.goals);
@@ -1439,7 +1487,7 @@ function askfSeasonCardBody(askf, season, competition, person) {
   const playtime = playingTimeStatsGridHTML(agg, { goalLabel: "Maç golleri" });
   return `${playtime ? `<div class="season-subblock">
       <h3 class="season-subtitle">Oynama süresi</h3>
-      <p class="match-note season-inline-note">Giriş, çıkış ve dakika ASKF maç kaydından; xG profil modelinden (gol/90).</p>
+      <p class="match-note season-inline-note">Süre: TFF yaş lig tablosu (U12 2×30, U13 2×30, U14/U15 2×35, U16 2×40, U17 2×45 dk). ASKF’de 90 dk yazılan tam maçlar buna göre düzeltilir.</p>
       ${playtime}
     </div>` : ""}
     <div class="season-subblock">
