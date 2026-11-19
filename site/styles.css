@@ -1794,6 +1794,15 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   font-weight: 500;
 }
 
+.match-teams-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.match-teams-link:hover .club-us {
+  text-decoration: underline;
+}
+
 .score-link {
   color: inherit;
 }

@@ -640,12 +640,12 @@ function goalEventRowsHTML(person, seasonId) {
   return rows.map((goal) => {
     const match = matchByMacId(person.matches, goal.macId);
     const macUrl = goal.macId ? `https://www.tff.org/Default.aspx?pageId=29&macId=${encodeURIComponent(goal.macId)}` : "";
-    const label = match
-      ? `${shortClubName(match.home)} – ${match.score} – ${shortClubName(match.away)}`
-      : `Maç ${goal.macId}`;
+    const labelHtml = match
+      ? `${clubNameHTML(match.home)}<span class="match-dash"> – </span><strong class="match-score-inline">${esc(match.score)}</strong><span class="match-dash"> – </span>${clubNameHTML(match.away)}`
+      : esc(`Maç ${goal.macId}`);
     return `<tr>
       <td>${esc(goal.date || match?.date || "")}</td>
-      <td>${macUrl ? `<a href="${esc(macUrl)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>` : esc(label)}</td>
+      <td class="match-teams">${macUrl ? `<a href="${esc(macUrl)}" target="_blank" rel="noopener noreferrer" class="match-teams-link">${labelHtml}</a>` : labelHtml}</td>
       <td class="match-play">${esc(goal.minute)}'</td>
       <td class="match-play">${esc(goal.type || "F - Ayak")}</td>
     </tr>`;
