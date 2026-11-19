@@ -1156,6 +1156,61 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   font-family: var(--sans);
 }
 
+.chart-line {
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.chart-line-goals {
+  stroke: var(--ice);
+}
+
+.chart-line-xg {
+  stroke: color-mix(in srgb, var(--lime) 80%, white);
+  stroke-dasharray: 5 4;
+}
+
+.chart-line-matches {
+  stroke: color-mix(in srgb, var(--ice) 45%, var(--muted));
+  stroke-dasharray: 2 3;
+}
+
+.chart-donut-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0;
+}
+
+.chart-donut {
+  width: 8.5rem;
+  height: 8.5rem;
+}
+
+.chart-donut-ilk {
+  stroke: color-mix(in srgb, var(--lime) 75%, #1a2818);
+}
+
+.chart-donut-yedek {
+  stroke: color-mix(in srgb, var(--ice) 55%, #1a2818);
+}
+
+.chart-donut-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  fill: var(--ink);
+  font-family: var(--sans);
+}
+
+.chart-donut-sub {
+  font-size: 0.65rem;
+  fill: var(--muted);
+  font-family: var(--sans);
+}
+
 .chart-label-league {
   font-size: 8px;
   fill: var(--muted);

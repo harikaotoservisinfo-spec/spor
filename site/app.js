@@ -1571,6 +1571,53 @@ function seasonCapacityTotals(matches, person) {
   return { actual, capacity };
 }
 
+function playerHomeFromMatch(match) {
+  if (match.home) return clubIsCisem(match.home);
+  const parts = String(match.matchup || "").split(/[–-]/).map((s) => s.trim());
+  if (parts.length < 2) return null;
+  if (clubIsCisem(parts[0])) return true;
+  if (clubIsCisem(parts[1])) return false;
+  return null;
+}
+
+function cardIsYellow(card) {
+  const type = String(card.card || "").toLocaleLowerCase("tr");
+  return type.includes("sarı") || type.includes("sari");
+}
+
+function cardIsRed(card) {
+  const type = String(card.card || "").toLocaleLowerCase("tr");
+  return type.includes("kırmızı") || type.includes("kirmizi");
+}
+
+function emptySeasonYearRow(key) {
+  return {
+    sortSeason: key,
+    label: formatSeasonYearLabel(key),
+    actualMin: 0,
+    capacityMin: 0,
+    starts: 0,
+    subEntries: 0,
+    subMinutes: 0,
+    xg: 0,
+    goals: 0,
+    matches: 0,
+    appearances: 0,
+    yellow: 0,
+    red: 0,
+    askfMatches: 0,
+    tffMatches: 0,
+    askfGoals: 0,
+    tffGoals: 0,
+    homeMatches: 0,
+    awayMatches: 0,
+    homeGoals: 0,
+    awayGoals: 0,
+    ilk11Min: 0,
+    yedekMin: 0
+  };
+}
+
 function seasonYearMetricsSeries(person) {
   const items = buildSeasonCardItems(person);
   const askf = person.askf || {};
@@ -1579,28 +1626,20 @@ function seasonYearMetricsSeries(person) {
     const key = item.sortSeason;
     let matches;
     let agg;
+    let leagueGoals = 0;
     if (item.kind === "tff") {
       matches = (person.matches || []).filter((m) => m.season === item.tffSeason.id);
       agg = playingTimeAggregate(person.matches, item.tffSeason.id, person);
+      leagueGoals = agg.goals;
     } else {
       const { season, competition } = parseCareerLeague(item.askfRow.league);
       matches = askfLeagueMatches(askf, season, competition);
-      const leagueGoals = askfLeagueGoals(askf, season, competition);
-      agg = askfPlayingTimeAggregate(matches, leagueGoals.length, person);
+      const goalsList = askfLeagueGoals(askf, season, competition);
+      leagueGoals = goalsList.length;
+      agg = askfPlayingTimeAggregate(matches, leagueGoals, person);
     }
     const cap = seasonCapacityTotals(matches, person);
-    if (!buckets.has(key)) {
-      buckets.set(key, {
-        sortSeason: key,
-        label: formatSeasonYearLabel(key),
-        actualMin: 0,
-        capacityMin: 0,
-        starts: 0,
-        subEntries: 0,
-        xg: 0,
-        goals: 0
-      });
-    }
+    if (!buckets.has(key)) buckets.set(key, emptySeasonYearRow(key));
     const row = buckets.get(key);
     row.actualMin += cap.actual;
     row.capacityMin += cap.capacity;
@@ -1608,8 +1647,161 @@ function seasonYearMetricsSeries(person) {
     row.subEntries += agg.subEntries;
     row.xg += agg.xg;
     row.goals += agg.goals;
+    if (item.kind === "tff") {
+      row.tffGoals += leagueGoals;
+    } else {
+      row.askfGoals += leagueGoals;
+    }
+    const discipline =
+      item.kind === "askf"
+        ? (() => {
+          const { season, competition } = parseCareerLeague(item.askfRow.league);
+          return askfLeagueCards(askf, season, competition);
+        })()
+        : [];
+    discipline.forEach((card) => {
+      if (cardIsYellow(card)) row.yellow += 1;
+      if (cardIsRed(card)) row.red += 1;
+    });
+    matches.forEach((match) => {
+      const min = deriveMatchMinutes(match, person);
+      if (min <= 0) return;
+      row.matches += 1;
+      row.appearances += 1;
+      if (item.kind === "tff") row.tffMatches += 1;
+      else row.askfMatches += 1;
+      const role = cleanMatchRole(match.role);
+      if (role === "ilk11") row.ilk11Min += min;
+      else if (role === "yedek") {
+        row.yedekMin += min;
+        if (numMatch(match.subIn)) row.subMinutes += min;
+      }
+      const home = playerHomeFromMatch(match);
+      const g = numMatch(match.goals);
+      if (home === true) {
+        row.homeMatches += 1;
+        row.homeGoals += g;
+      } else if (home === false) {
+        row.awayMatches += 1;
+        row.awayGoals += g;
+      }
+    });
   });
-  return [...buckets.values()].sort((a, b) => a.sortSeason.localeCompare(b.sortSeason, "tr"));
+  return [...buckets.values()]
+    .map((row) => ({
+      ...row,
+      goalDelta: row.goals - row.xg,
+      gpg: row.matches ? row.goals / row.matches : 0,
+      avgMin: row.appearances ? row.actualMin / row.appearances : 0,
+      timeUse: row.capacityMin ? (row.actualMin / row.capacityMin) * 100 : 0,
+      startRate: row.matches ? (row.starts / row.matches) * 100 : 0,
+      subAvgMin: row.subEntries ? row.subMinutes / row.subEntries : 0,
+      cardRate: row.matches ? (row.yellow + row.red) / row.matches : 0
+    }))
+    .sort((a, b) => a.sortSeason.localeCompare(b.sortSeason, "tr"));
+}
+
+function cumulativeSeasonSeries(series) {
+  let goals = 0;
+  let matches = 0;
+  let xg = 0;
+  return series.map((row) => {
+    goals += row.goals;
+    matches += row.matches;
+    xg += row.xg;
+    return { ...row, cumGoals: goals, cumMatches: matches, cumXg: xg };
+  });
+}
+
+function ageGroupMetricsSeries(person) {
+  const askf = (person.askf?.matches || []).map((m) => ({ ...m, goals: numMatch(m.goals) }));
+  const tff = (person.matches || []).map((m) => ({ ...m, goals: numMatch(m.goals) }));
+  const buckets = new Map();
+  [...askf, ...tff].forEach((match) => {
+    const age = youthAgeFromCompetition(match.competition || "");
+    if (!age) return;
+    const label = `U${age}`;
+    if (!buckets.has(label)) {
+      buckets.set(label, { label, matches: 0, goals: 0, minutes: 0, xg: 0 });
+    }
+    const row = buckets.get(label);
+    const min = deriveMatchMinutes(match, person);
+    if (min <= 0) return;
+    row.matches += 1;
+    row.goals += numMatch(match.goals);
+    row.minutes += min;
+    row.xg += matchExpectedGoals(match, person);
+  });
+  (person.askf?.goals || []).forEach((goal) => {
+    const age = youthAgeFromCompetition(goal.competition || "");
+    if (!age) return;
+    const label = `U${age}`;
+    if (!buckets.has(label)) buckets.set(label, { label, matches: 0, goals: 0, minutes: 0, xg: 0 });
+    buckets.get(label).goals += 1;
+  });
+  (person.goalEvents || []).forEach((goal) => {
+    const match = matchByMacId(person.matches, goal.macId);
+    const age = youthAgeFromCompetition(match?.competition || "U15");
+    const label = `U${age || 15}`;
+    if (!buckets.has(label)) buckets.set(label, { label, matches: 0, goals: 0, minutes: 0, xg: 0 });
+    buckets.get(label).goals += 1;
+  });
+  return [...buckets.values()].sort((a, b) => {
+    const na = Number(a.label.replace(/\D/g, ""));
+    const nb = Number(b.label.replace(/\D/g, ""));
+    return na - nb;
+  });
+}
+
+function monthlyActivitySeries(person) {
+  const buckets = new Map();
+  const ingest = (match, source) => {
+    const min = deriveMatchMinutes(match, person);
+    if (min <= 0 && !match.date) return;
+    const stamp = parseMatchDate(match.date);
+    if (!stamp) return;
+    const d = new Date(stamp);
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    if (!buckets.has(key)) buckets.set(key, { key, label: key, matches: 0, goals: 0 });
+    const row = buckets.get(key);
+    if (min > 0) row.matches += 1;
+    row.goals += numMatch(match.goals);
+  };
+  (person.askf?.matches || []).forEach((m) => ingest(m, "askf"));
+  (person.matches || []).forEach((m) => ingest(m, "tff"));
+  (person.askf?.goals || []).forEach((g) => {
+    if (!g.date) return;
+    const stamp = parseMatchDate(g.date);
+    if (!stamp) return;
+    const d = new Date(stamp);
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    if (!buckets.has(key)) buckets.set(key, { key, label: key, matches: 0, goals: 0 });
+    buckets.get(key).goals += 1;
+  });
+  (person.goalEvents || []).forEach((g) => {
+    const stamp = parseMatchDate(g.date);
+    if (!stamp) return;
+    const d = new Date(stamp);
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    if (!buckets.has(key)) buckets.set(key, { key, label: key, matches: 0, goals: 0 });
+    buckets.get(key).goals += 1;
+  });
+  return [...buckets.values()].sort((a, b) => a.key.localeCompare(b.key, "tr"));
+}
+
+function careerRoleMinutes(person) {
+  let ilk11 = 0;
+  let yedek = 0;
+  const consume = (match) => {
+    const min = deriveMatchMinutes(match, person);
+    if (min <= 0) return;
+    const role = cleanMatchRole(match.role);
+    if (role === "ilk11") ilk11 += min;
+    else if (role === "yedek") yedek += min;
+  };
+  (person.askf?.matches || []).forEach(consume);
+  (person.matches || []).forEach(consume);
+  return { ilk11, yedek, total: ilk11 + yedek };
 }
 
 function chartGridHTML(cap, padL, padR, padT, innerH, w) {
@@ -1753,24 +1945,303 @@ function rosterSeasonChartHTML(series) {
   })}`;
 }
 
+function chartCard(title, note, inner) {
+  return `<article class="chart-card">
+    <h3 class="chart-card-title">${esc(title)}</h3>
+    <p class="match-note season-inline-note">${note}</p>
+    ${inner}
+  </article>`;
+}
+
+function singleSeasonBarChartHTML(series, opts) {
+  const { value, barClass, ariaLabel, formatVal = (v) => String(v), capMax } = opts;
+  if (!series.length) return `<p class="empty">Grafik için sezon verisi yok.</p>`;
+  const maxVal = Math.max(...series.map(value), 0.01);
+  const cap = capMax ?? Math.ceil(maxVal * 1.15 * 100) / 100;
+  const w = Math.max(520, 72 * series.length + 80);
+  const h = 248;
+  const padL = 42;
+  const padR = 16;
+  const padT = 20;
+  const padB = 56;
+  const innerW = w - padL - padR;
+  const innerH = h - padT - padB;
+  const slot = innerW / series.length;
+  const barW = Math.min(22, slot * 0.5);
+  const gridLines = chartGridHTML(cap, padL, padR, padT, innerH, w);
+  const bars = series
+    .map((d, i) => {
+      const v = value(d);
+      const bh = (v / cap) * innerH;
+      const cx = padL + slot * i + slot / 2;
+      const x = cx - barW / 2;
+      return `<rect class="chart-bar ${barClass}" x="${x}" y="${padT + innerH - bh}" width="${barW}" height="${Math.max(bh, 0.5)}" rx="2">
+        <title>${esc(d.label)}: ${esc(formatVal(v))}</title>
+      </rect>
+      <text x="${cx}" y="${h - padB + 16}" class="chart-label-season" text-anchor="middle">${esc(d.label)}</text>`;
+    })
+    .join("");
+  return `<div class="chart-scroll" tabindex="0" aria-label="${esc(ariaLabel)}">
+    <svg class="stats-chart" viewBox="0 0 ${w} ${h}" role="img" aria-hidden="true">
+      ${gridLines}
+      <line x1="${padL}" y1="${padT + innerH}" x2="${w - padR}" y2="${padT + innerH}" class="chart-axis-line"/>
+      ${bars}
+    </svg>
+  </div>`;
+}
+
+function signedGoalDeltaChartHTML(series) {
+  if (!series.length) return `<p class="empty">Grafik için sezon verisi yok.</p>`;
+  const maxAbs = Math.max(...series.map((d) => Math.abs(d.goalDelta)), 0.3);
+  const cap = Math.ceil(maxAbs * 1.25 * 10) / 10;
+  const w = Math.max(520, 72 * series.length + 80);
+  const h = 248;
+  const padL = 42;
+  const padR = 16;
+  const padT = 20;
+  const padB = 56;
+  const innerW = w - padL - padR;
+  const innerH = h - padT - padB;
+  const zeroY = padT + innerH / 2;
+  const slot = innerW / series.length;
+  const barW = Math.min(22, slot * 0.5);
+  const gridLines = [0, 0.5, 1]
+    .map((t) => {
+      const val = cap * (1 - t * 2);
+      const y = padT + innerH * t;
+      return `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" class="chart-grid"/>
+      <text x="${padL - 8}" y="${y + 4}" class="chart-axis" text-anchor="end">${val.toFixed(1)}</text>`;
+    })
+    .join("");
+  const bars = series
+    .map((d, i) => {
+      const v = d.goalDelta;
+      const hBar = (Math.abs(v) / cap) * (innerH / 2);
+      const cx = padL + slot * i + slot / 2;
+      const x = cx - barW / 2;
+      const y = v >= 0 ? zeroY - hBar : zeroY;
+      const klass = v >= 0 ? "chart-bar-actual" : "chart-bar-subs";
+      return `<rect class="chart-bar ${klass}" x="${x}" y="${y}" width="${barW}" height="${Math.max(hBar, 0.5)}" rx="2">
+        <title>${esc(d.label)}: ${v >= 0 ? "+" : ""}${v.toFixed(2)}</title>
+      </rect>
+      <text x="${cx}" y="${h - padB + 16}" class="chart-label-season" text-anchor="middle">${esc(d.label)}</text>`;
+    })
+    .join("");
+  return `<div class="chart-legend" aria-hidden="true">
+    <span class="chart-legend-item">Üst: gol &gt; xG · Alt: gol &lt; xG</span>
+  </div>
+  <div class="chart-scroll" tabindex="0" aria-label="Gol eksi xG sezonluk">
+    <svg class="stats-chart" viewBox="0 0 ${w} ${h}" role="img" aria-hidden="true">
+      ${gridLines}
+      <line x1="${padL}" y1="${zeroY}" x2="${w - padR}" y2="${zeroY}" class="chart-axis-line"/>
+      ${bars}
+    </svg>
+  </div>`;
+}
+
+function cumulativeLineChartHTML(cumSeries) {
+  if (!cumSeries.length) return `<p class="empty">Grafik için sezon verisi yok.</p>`;
+  const maxG = cumSeries.at(-1)?.cumGoals || 1;
+  const maxM = cumSeries.at(-1)?.cumMatches || 1;
+  const maxX = cumSeries.at(-1)?.cumXg || 1;
+  const cap = Math.max(maxG, maxM, maxX * (maxG / maxX || 1), 1);
+  const w = Math.max(520, 72 * cumSeries.length + 80);
+  const h = 248;
+  const padL = 42;
+  const padR = 16;
+  const padT = 20;
+  const padB = 56;
+  const innerW = w - padL - padR;
+  const innerH = h - padT - padB;
+  const slot = innerW / Math.max(cumSeries.length - 1, 1);
+  const point = (i, val) => {
+    const x = padL + slot * i;
+    const y = padT + innerH - (val / cap) * innerH;
+    return `${x},${y}`;
+  };
+  const line = (key) => cumSeries.map((d, i) => point(i, d[key])).join(" ");
+  const labels = cumSeries
+    .map((d, i) => `<text x="${padL + slot * i}" y="${h - padB + 16}" class="chart-label-season" text-anchor="middle">${esc(d.label)}</text>`)
+    .join("");
+  return `<div class="chart-legend" aria-hidden="true">
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-goals"></span> Kümülatif gol</span>
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-xg"></span> Kümülatif xG</span>
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-starts"></span> Kümülatif maç</span>
+  </div>
+  <div class="chart-scroll" tabindex="0" aria-label="Kümülatif kariyer">
+    <svg class="stats-chart" viewBox="0 0 ${w} ${h}" role="img" aria-hidden="true">
+      ${chartGridHTML(cap, padL, padR, padT, innerH, w)}
+      <polyline class="chart-line chart-line-goals" points="${line("cumGoals")}" fill="none"/>
+      <polyline class="chart-line chart-line-xg" points="${line("cumXg")}" fill="none"/>
+      <polyline class="chart-line chart-line-matches" points="${line("cumMatches")}" fill="none"/>
+      ${labels}
+    </svg>
+  </div>`;
+}
+
+function ageGroupBarChartHTML(ageSeries) {
+  if (!ageSeries.length) return `<p class="empty">Yaş grubu verisi yok.</p>`;
+  const maxVal = Math.max(...ageSeries.map((d) => Math.max(d.goals, d.matches)), 1);
+  const cap = Math.ceil(maxVal * 1.15);
+  const rowH = 36;
+  const h = rowH * ageSeries.length + 48;
+  const w = 520;
+  const padL = 88;
+  const padR = 16;
+  const padT = 16;
+  const innerW = w - padL - padR;
+  const bars = ageSeries
+    .map((d, i) => {
+      const y = padT + i * rowH + 8;
+      const gw = (d.goals / cap) * innerW * 0.45;
+      const mw = (d.matches / cap) * innerW * 0.45;
+      return `<text x="${padL - 10}" y="${y + 14}" class="chart-label-season" text-anchor="end">${esc(d.label)}</text>
+      <rect class="chart-bar chart-bar-xg" x="${padL}" y="${y}" width="${Math.max(gw, 1)}" height="12" rx="2"/>
+      <rect class="chart-bar chart-bar-starts" x="${padL + innerW * 0.5}" y="${y}" width="${Math.max(mw, 1)}" height="12" rx="2"/>
+      <title>${esc(d.label)}: ${d.goals} gol, ${d.matches} maç</title>`;
+    })
+    .join("");
+  return `<div class="chart-legend" aria-hidden="true">
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-xg"></span> Gol</span>
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-starts"></span> Maç</span>
+  </div>
+  <div class="chart-scroll" tabindex="0"><svg class="stats-chart" viewBox="0 0 ${w} ${h}" role="img">${bars}</svg></div>`;
+}
+
+function monthlyActivityChartHTML(monthly) {
+  const slice = monthly.slice(-18);
+  if (!slice.length) return `<p class="empty">Aylık veri yok.</p>`;
+  return dualSeasonBarChartHTML(slice, {
+    ariaLabel: "Aylık maç ve gol",
+    valueA: (d) => d.matches,
+    valueB: (d) => d.goals,
+    classA: "chart-bar-starts",
+    classB: "chart-bar-xg",
+    formatVal: (n) => String(n)
+  });
+}
+
+function roleDonutChartHTML(role) {
+  const total = role.total || 1;
+  const ilk = role.ilk11 / total;
+  const circ = 2 * Math.PI * 54;
+  const dash1 = `${ilk * circ} ${circ}`;
+  const dash2 = `${(1 - ilk) * circ} ${circ}`;
+  return `<div class="chart-legend" aria-hidden="true">
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-actual"></span> İlk 11 dk</span>
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-subs"></span> Yedek dk</span>
+  </div>
+  <div class="chart-donut-wrap">
+    <svg class="chart-donut" viewBox="0 0 140 140" role="img" aria-label="Kariyer rol dağılımı dakika">
+      <circle cx="70" cy="70" r="54" fill="none" stroke="color-mix(in srgb, var(--ice) 35%, transparent)" stroke-width="16"/>
+      <circle cx="70" cy="70" r="54" fill="none" class="chart-donut-ilk" stroke-width="16" stroke-dasharray="${dash1}" transform="rotate(-90 70 70)"/>
+      <circle cx="70" cy="70" r="54" fill="none" class="chart-donut-yedek" stroke-width="16" stroke-dasharray="${dash2}" stroke-dashoffset="${-ilk * circ}" transform="rotate(-90 70 70)"/>
+      <text x="70" y="66" text-anchor="middle" class="chart-donut-value">${Math.round(ilk * 100)}%</text>
+      <text x="70" y="82" text-anchor="middle" class="chart-donut-sub">İlk 11</text>
+    </svg>
+    <p class="match-note season-inline-note">${formatDurationTotal(role.ilk11)} ilk 11 · ${formatDurationTotal(role.yedek)} yedek</p>
+  </div>`;
+}
+
 function statsChartsPanelHTML(person) {
   const series = seasonYearMetricsSeries(person);
+  const cum = cumulativeSeasonSeries(series);
+  const ageSeries = ageGroupMetricsSeries(person);
+  const monthly = monthlyActivitySeries(person);
+  const role = careerRoleMinutes(person);
   return `<div class="stats-charts-stack" data-stats-panel="grafikler" id="stats-grafikler" hidden>
-    <article class="chart-card">
-      <h3 class="chart-card-title">Gol beklentisi — kronoloji</h3>
-      <p class="match-note season-inline-note">Sezon yılı bazında (tüm ligler birlikte). xG: süre + gol/90 modeli; nokta: gerçek gol.</p>
-      ${xgTrendChartHTML(series)}
-    </article>
-    <article class="chart-card">
-      <h3 class="chart-card-title">Oyun süresi</h3>
-      <p class="match-note season-inline-note">Çubuk: o sezonda oynadığı maçlarda mümkün olan süre (yaş ligine göre tam maç). Yan çubuk: sahada kaldığı toplam dk.</p>
-      ${playingTimeSeasonChartHTML(series)}
-    </article>
-    <article class="chart-card">
-      <h3 class="chart-card-title">Kadro</h3>
-      <p class="match-note season-inline-note">İlk 11 başlangıç ve yedekten giriş sayıları — sezon yılı toplamı.</p>
-      ${rosterSeasonChartHTML(series)}
-    </article>
+    ${chartCard("Gol beklentisi — kronoloji", "Sezon yılı; xG çubuk, gerçek gol nokta.", xgTrendChartHTML(series))}
+    ${chartCard("Oyun süresi", "Maç üst sınırı vs sahada kalınan dk.", playingTimeSeasonChartHTML(series))}
+    ${chartCard("Kadro", "İlk 11 başlangıç ve yedekten giriş.", rosterSeasonChartHTML(series))}
+    ${chartCard("Gol − xG", "Beklentiye göre fazla veya eksik bitirme.", signedGoalDeltaChartHTML(series))}
+    ${chartCard("Maç başına gol", "Sezon yılı gol ortalaması.", singleSeasonBarChartHTML(series, {
+      value: (d) => d.gpg,
+      barClass: "chart-bar-xg",
+      ariaLabel: "Maç başına gol",
+      formatVal: (v) => v.toFixed(2)
+    }))}
+    ${chartCard("Oyun kullanımı (%)", "Kaldığı dk ÷ mümkün maç süresi.", singleSeasonBarChartHTML(series, {
+      value: (d) => d.timeUse,
+      barClass: "chart-bar-actual",
+      ariaLabel: "Oyun kullanım yüzdesi",
+      formatVal: (v) => `${v.toFixed(0)}%`,
+      capMax: 100
+    }))}
+    ${chartCard("Maç başına ortalama dk", "Gerçek oyun süresi ortalaması.", singleSeasonBarChartHTML(series, {
+      value: (d) => d.avgMin,
+      barClass: "chart-bar-capacity",
+      ariaLabel: "Maç başına dakika",
+      formatVal: (v) => `${v.toFixed(1)}'`
+    }))}
+    ${chartCard("Maç sayısı", "Sezonda forma giyilen maç.", singleSeasonBarChartHTML(series, {
+      value: (d) => d.matches,
+      barClass: "chart-bar-starts",
+      ariaLabel: "Maç sayısı",
+      formatVal: (v) => String(Math.round(v))
+    }))}
+    ${chartCard("İlk 11 oranı (%)", "İlk 11 başlangıç ÷ maç.", singleSeasonBarChartHTML(series, {
+      value: (d) => d.startRate,
+      barClass: "chart-bar-starts",
+      ariaLabel: "İlk 11 oranı",
+      formatVal: (v) => `${v.toFixed(0)}%`,
+      capMax: 100
+    }))}
+    ${chartCard("Yedek girişte ort. dk", "Yedekten oyuna girince ortalama kalış.", singleSeasonBarChartHTML(series, {
+      value: (d) => d.subAvgMin,
+      barClass: "chart-bar-subs",
+      ariaLabel: "Yedek ortalama dakika",
+      formatVal: (v) => `${v.toFixed(1)}'`
+    }))}
+    ${chartCard("ASKF · TFF maç", "Kaynak kırılımı — sezon yılı.", dualSeasonBarChartHTML(series, {
+      ariaLabel: "ASKF ve TFF maç",
+      valueA: (d) => d.askfMatches,
+      valueB: (d) => d.tffMatches,
+      classA: "chart-bar-starts",
+      classB: "chart-bar-xg",
+      formatVal: (n) => String(n)
+    }))}
+    ${chartCard("ASKF · TFF gol", "Resmi gelişim ve amatör gol toplamı.", dualSeasonBarChartHTML(series, {
+      ariaLabel: "ASKF ve TFF gol",
+      valueA: (d) => d.askfGoals,
+      valueB: (d) => d.tffGoals,
+      classA: "chart-bar-actual",
+      classB: "chart-bar-xg",
+      formatVal: (n) => String(n)
+    }))}
+    ${chartCard("İç · dış saha maç", "Maç sayısı (ev/deplasman).", dualSeasonBarChartHTML(series, {
+      ariaLabel: "İç dış saha maç",
+      valueA: (d) => d.homeMatches,
+      valueB: (d) => d.awayMatches,
+      classA: "chart-bar-actual",
+      classB: "chart-bar-subs",
+      formatVal: (n) => String(n)
+    }))}
+    ${chartCard("İç · dış saha gol", "Ev/deplasman gol (TFF maç kayıtları).", dualSeasonBarChartHTML(series, {
+      ariaLabel: "İç dış saha gol",
+      valueA: (d) => d.homeGoals,
+      valueB: (d) => d.awayGoals,
+      classA: "chart-bar-actual",
+      classB: "chart-bar-xg",
+      formatVal: (n) => String(n)
+    }))}
+    ${chartCard("Disiplin", "Sarı ve kırmızı kart — ASKF.", dualSeasonBarChartHTML(series, {
+      ariaLabel: "Kartlar",
+      valueA: (d) => d.yellow,
+      valueB: (d) => d.red,
+      classA: "chart-bar-xg",
+      classB: "chart-bar-subs",
+      formatVal: (n) => String(n)
+    }))}
+    ${chartCard("Kart sıklığı", "Kart ÷ maç (sezon).", singleSeasonBarChartHTML(series, {
+      value: (d) => d.cardRate,
+      barClass: "chart-bar-subs",
+      ariaLabel: "Kart sıklığı",
+      formatVal: (v) => v.toFixed(2)
+    }))}
+    ${chartCard("Kümülatif kariyer", "İlk sezondan itibaren gol, xG ve maç.", cumulativeLineChartHTML(cum))}
+    ${chartCard("Yaş grubu özeti", "U12…U17 kariyer hacmi.", ageGroupBarChartHTML(ageSeries))}
+    ${chartCard("Aylık aktivite", "Son 18 ay maç ve gol.", monthlyActivityChartHTML(monthly))}
+    ${chartCard("Rol payı (dakika)", "Kariyer boyu ilk 11 vs yedek süre.", roleDonutChartHTML(role))}
   </div>`;
 }
 
