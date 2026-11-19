@@ -1225,6 +1225,147 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   margin-top: 1.5rem;
 }
 
+.season-card-stack {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.season-card {
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  background: color-mix(in srgb, var(--sheet) 88%, transparent);
+  overflow: hidden;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.season-card[open] {
+  border-color: color-mix(in srgb, var(--lime) 35%, transparent);
+  box-shadow: 0 16px 40px -32px rgba(0, 0, 0, 0.95);
+}
+
+.season-card-summary {
+  list-style: none;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.65rem 0.85rem;
+  padding: 0.9rem 1rem;
+  user-select: none;
+}
+
+.season-card-summary::-webkit-details-marker {
+  display: none;
+}
+
+.season-card-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.season-card-season {
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  font-weight: 600;
+}
+
+.season-card-league {
+  font-size: 0.92rem;
+  line-height: 1.3;
+  font-weight: 500;
+}
+
+.season-card-metrics {
+  display: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem 0.5rem;
+}
+
+.season-metric {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.season-metric em {
+  font-style: normal;
+  opacity: 0.62;
+  margin-right: 0.2rem;
+}
+
+.season-card-chevron {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  opacity: 0.55;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.season-card[open] .season-card-chevron {
+  transform: rotate(-135deg);
+  opacity: 0.85;
+}
+
+.season-card-body {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.season-subblock + .season-subblock {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.season-subtitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.78;
+  font-weight: 600;
+}
+
+.season-count {
+  font-weight: 700;
+  opacity: 0.55;
+  margin-left: 0.25rem;
+}
+
+.season-empty {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+}
+
+.match-table-season {
+  min-width: 28rem;
+  font-size: 0.8rem;
+}
+
+.season-match-scroll {
+  max-height: 22rem;
+  overflow: auto;
+}
+
+@media (min-width: 640px) {
+  .season-card-metrics {
+    display: flex;
+  }
+
+  .season-card-summary {
+    grid-template-columns: 1fr 1fr auto;
+  }
+}
+
 .match-table th,
 .match-table td {
   text-align: left;

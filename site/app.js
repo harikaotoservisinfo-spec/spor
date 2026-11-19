@@ -1241,111 +1241,141 @@ function askfTotalsHTML(askf) {
   </div>`;
 }
 
-function askfCareerTableHTML(askf) {
-  const rows = askf.career || [];
-  if (!rows.length) return "";
-  const body = rows.map((row) => `<tr>
-    <td class="career-league">${esc(row.league)}</td>
-    <td class="text-center">${esc(row.played)}</td>
-    <td class="text-center">${esc(row.subIn)}</td>
-    <td class="text-center">${esc(row.subOut)}</td>
-    <td class="text-center"><strong>${esc(row.goals)}</strong></td>
-    <td class="text-center">${esc(row.yellow)}</td>
-    <td class="text-center">${esc(row.red)}</td>
-  </tr>`).join("");
-  return `<section class="group stats-panel">
-    <h2>Kariyer</h2>
-    <p class="match-note">Antalya ASKF — sezon / lig bazında özet (Kariyer sekmesi).</p>
-    <div class="match-scroll">
-      <table class="match-table match-table-career">
-        <thead><tr>
-          <th>Sezon / Lig</th><th>Maç</th><th>Giriş</th><th>Çıkış</th><th>Gol</th><th>Sarı</th><th>Kırmızı</th>
-        </tr></thead>
-        <tbody>${body}</tbody>
-      </table>
-    </div>
-  </section>`;
+function parseCareerLeague(league) {
+  const text = String(league || "").trim();
+  const parts = text.split(/\s+[-–]\s+/);
+  if (parts.length >= 2) {
+    return { season: parts[0].trim(), competition: parts.slice(1).join(" - ").trim() };
+  }
+  return { season: "", competition: text };
 }
 
-function askfSeasonOptions(matches) {
-  const seasons = [...new Set((matches || []).map((m) => m.season).filter(Boolean))];
-  seasons.sort((a, b) => b.localeCompare(a, "tr"));
-  return `<label class="stats-filter" for="askf-season-filter"><span>Sezon</span>
-    <select id="askf-season-filter" aria-label="Sezon filtresi">
-      <option value="">Tüm sezonlar</option>
-      ${seasons.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("")}
-    </select></label>`;
+function normalizeCompetition(value) {
+  return String(value || "").toLocaleLowerCase("tr").replace(/\s+/g, " ").trim();
 }
 
-function askfMatchesTableHTML(askf) {
-  const rows = askf.matches || [];
-  if (!rows.length) return "";
-  const body = rows.map((match) => {
+function belongsToLeague(item, season, competition) {
+  if (season && item.season !== season) return false;
+  const a = normalizeCompetition(item.competition);
+  const b = normalizeCompetition(competition);
+  if (!b) return true;
+  return a === b || a.includes(b) || b.includes(a);
+}
+
+function askfLeagueMatches(askf, season, competition) {
+  return (askf.matches || [])
+    .filter((m) => belongsToLeague(m, season, competition))
+    .sort((a, b) => parseMatchDate(b.date) - parseMatchDate(a.date));
+}
+
+function askfLeagueGoals(askf, season, competition) {
+  return (askf.goals || [])
+    .filter((g) => belongsToLeague(g, season, competition))
+    .sort((a, b) => parseMatchDate(b.date) - parseMatchDate(a.date));
+}
+
+function askfLeagueCards(askf, season, competition) {
+  return (askf.cards || []).filter((c) => belongsToLeague(c, season, competition));
+}
+
+function askfSeasonMatchRows(matches) {
+  if (!matches.length) return `<p class="empty">Bu lig için maç kaydı yok.</p>`;
+  const body = matches.map((match) => {
     const role = match.role ? roleLabel(match.role) : "—";
     const mins = match.minutes ? `${match.minutes}'` : "—";
-    const subIn = formatMinuteMark(match.subIn);
-    const subOut = formatMinuteMark(match.subOut);
-    return `<tr data-season="${esc(match.season)}">
+    return `<tr>
       <td class="match-when">${esc(match.date)}</td>
-      <td class="match-comp">${esc(match.competition)}</td>
       <td class="match-teams">${esc(match.matchup)}</td>
       <td class="match-play match-score-col"><strong>${esc(match.score)}</strong></td>
       <td class="match-play">${esc(role)}</td>
-      <td class="match-play">${subIn}</td>
-      <td class="match-play">${subOut}</td>
+      <td class="match-play">${formatMinuteMark(match.subIn)}</td>
+      <td class="match-play">${formatMinuteMark(match.subOut)}</td>
       <td class="match-play match-min"><strong>${mins}</strong></td>
     </tr>`;
   }).join("");
-  return `<section class="group stats-panel" id="askf-maclar">
-    <div class="panel-head">
-      <h2>Maçlar</h2>
-      ${askfSeasonOptions(rows)}
-    </div>
-    <p class="match-note">88 kayıt — skor, kadro (İlk 11 / Yedek), giriş ve çıkış dakikaları.</p>
-    <div class="match-scroll" tabindex="0">
-      <table class="match-table match-table-play" id="askf-matches-table">
-        <thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Skor</th><th>Kadro</th><th>Giriş</th><th>Çıkış</th><th>Dk</th></tr></thead>
-        <tbody>${body}</tbody>
-      </table>
-    </div>
-  </section>`;
+  return `<div class="match-scroll season-match-scroll" tabindex="0">
+    <table class="match-table match-table-season">
+      <thead><tr><th>Tarih</th><th>Maç</th><th>Skor</th><th>Kadro</th><th>Giriş</th><th>Çıkış</th><th>Dk</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+  </div>`;
 }
 
-function askfGoalsTableHTML(askf) {
-  const rows = askf.goals || [];
-  if (!rows.length) return "";
-  const body = rows.map((goal) => `<tr data-season="${esc(goal.season)}">
+function askfSeasonGoalRows(goals) {
+  if (!goals.length) return `<p class="empty season-empty">Bu sezonda gol kaydı yok.</p>`;
+  const body = goals.map((goal) => `<tr>
     <td class="match-when">${esc(goal.date)}</td>
-    <td class="match-comp">${esc(goal.competition)}</td>
     <td class="match-teams">${esc(goal.matchup)}</td>
     <td class="match-play match-score-col"><strong>${esc(goal.score)}</strong></td>
     <td class="match-play"><strong>${esc(goal.minute)}'</strong></td>
   </tr>`).join("");
-  return `<section class="group stats-panel" id="askf-goller">
-    <h2>Goller</h2>
-    <p class="match-note">70 gol — dakika ve maç skoru ile.</p>
-    <div class="match-scroll">
-      <table class="match-table"><thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Skor</th><th>Dk</th></tr></thead><tbody>${body}</tbody></table>
-    </div>
-  </section>`;
+  return `<div class="match-scroll"><table class="match-table match-table-season"><thead><tr><th>Tarih</th><th>Maç</th><th>Skor</th><th>Dk</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
-function askfCardsTableHTML(askf) {
-  const rows = askf.cards || [];
-  if (!rows.length) return `<section class="group stats-panel" id="askf-kartlar"><h2>Kartlar</h2><p class="empty">Kart kaydı yok.</p></section>`;
-  const body = rows.map((card) => {
+function askfSeasonCardRows(cards) {
+  if (!cards.length) return "";
+  const body = cards.map((card) => {
     const type = String(card.card || "").toLocaleLowerCase("tr");
     const klass = type.includes("kırmızı") || type.includes("kirmizi") ? "card-red" : "card-yellow";
-    return `<tr><td class="match-when">${esc(card.date)}</td>
-      <td class="match-comp">${esc(card.competition)}</td>
+    return `<tr>
+      <td class="match-when">${esc(card.date)}</td>
       <td class="match-teams">${esc(card.matchup)}</td>
       <td class="match-play match-score-col"><strong>${esc(card.score)}</strong></td>
       <td class="match-play"><span class="card-pill ${klass}">${esc(card.card || "Kart")}</span></td>
-      <td class="match-play">${esc(card.minute)}'</td></tr>`;
+      <td class="match-play">${esc(card.minute)}'</td>
+    </tr>`;
   }).join("");
-  return `<section class="group stats-panel" id="askf-kartlar">
-    <h2>Kartlar</h2>
-    <div class="match-scroll"><table class="match-table"><thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Skor</th><th>Kart</th><th>Dk</th></tr></thead><tbody>${body}</tbody></table></div>
+  return `<div class="season-subblock">
+    <h3 class="season-subtitle">Kartlar</h3>
+    <div class="match-scroll"><table class="match-table match-table-season"><thead><tr><th>Tarih</th><th>Maç</th><th>Skor</th><th>Kart</th><th>Dk</th></tr></thead><tbody>${body}</tbody></table></div>
+  </div>`;
+}
+
+function askfSeasonCardsHTML(askf) {
+  const rows = askf.career || [];
+  if (!rows.length) return "";
+  const cards = rows.map((row, index) => {
+    const { season, competition } = parseCareerLeague(row.league);
+    const matches = askfLeagueMatches(askf, season, competition);
+    const goals = askfLeagueGoals(askf, season, competition);
+    const discipline = askfLeagueCards(askf, season, competition);
+    const slug = `${season}-${competition}`.toLocaleLowerCase("tr").replace(/[^a-z0-9]+/g, "-").slice(0, 48);
+    const stats = [
+      ["Maç", row.played],
+      ["Gol", row.goals],
+      ["Giriş", row.subIn],
+      ["Çıkış", row.subOut],
+      row.yellow !== "0" ? ["Sarı", row.yellow] : null,
+      row.red !== "0" ? ["Kırmızı", row.red] : null
+    ].filter(Boolean);
+    return `<details class="season-card" id="season-${esc(slug)}"${index === 0 ? " open" : ""}>
+      <summary class="season-card-summary">
+        <span class="season-card-titles">
+          <span class="season-card-season">${esc(season || "Sezon")}</span>
+          <span class="season-card-league">${esc(competition)}</span>
+        </span>
+        <span class="season-card-metrics" aria-hidden="true">
+          ${stats.map(([label, value]) => `<span class="season-metric"><em>${esc(label)}</em> ${esc(value)}</span>`).join("")}
+        </span>
+        <span class="season-card-chevron" aria-hidden="true"></span>
+      </summary>
+      <div class="season-card-body">
+        <div class="season-subblock">
+          <h3 class="season-subtitle">Maçlar <span class="season-count">${matches.length}</span></h3>
+          ${askfSeasonMatchRows(matches)}
+        </div>
+        <div class="season-subblock">
+          <h3 class="season-subtitle">Goller <span class="season-count">${goals.length}</span></h3>
+          ${askfSeasonGoalRows(goals)}
+        </div>
+        ${askfSeasonCardRows(discipline)}
+      </div>
+    </details>`;
+  }).join("");
+  return `<section class="group stats-panel" id="askf-sezonlar">
+    <h2>Sezonlar</h2>
+    <p class="match-note">Karta tıkla — o ligdeki maç, gol ve kartlar açılır.</p>
+    <div class="season-card-stack">${cards}</div>
   </section>`;
 }
 
@@ -1363,15 +1393,10 @@ function askfBlockHTML(person) {
     </div>
     ${askfTotalsHTML(askf)}
     <nav class="stats-jump" aria-label="İstatistik bölümleri">
-      <a href="#askf-maclar">Maçlar</a>
-      <a href="#askf-goller">Goller</a>
-      <a href="#askf-kartlar">Kartlar</a>
+      <a href="#askf-sezonlar">Sezonlar</a>
       <a href="#tff-detay">TFF detay</a>
     </nav>
-    ${askfCareerTableHTML(askf)}
-    ${askfMatchesTableHTML(askf)}
-    ${askfGoalsTableHTML(askf)}
-    ${askfCardsTableHTML(askf)}
+    ${askfSeasonCardsHTML(askf)}
   </section>`;
 }
 
@@ -1384,12 +1409,6 @@ function tffDetailSectionHTML(person) {
     ${tffBlockHTML(person)}
     ${seasonsHTML(person)}
   </section>`;
-}
-
-function filterAskfSeason(season) {
-  document.querySelectorAll("#askf-matches-table tbody tr, #askf-goller tbody tr").forEach((row) => {
-    row.hidden = !!(season && row.dataset.season !== season);
-  });
 }
 
 function renderIstatistikler() {
@@ -1805,8 +1824,6 @@ document.body.addEventListener("input", (event) => {
 document.body.addEventListener("change", (event) => {
   if (event.target.id === "import-file" && event.target.files?.[0]) {
     importProfile(event.target.files[0]);
-  } else if (event.target.id === "askf-season-filter") {
-    filterAskfSeason(event.target.value);
   }
 });
 
