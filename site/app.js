@@ -466,6 +466,34 @@ function playingTimeAggregate(matches, seasonId, person) {
   };
 }
 
+function askfPlayingTimeAggregate(matches, goalCount, person) {
+  const length = matchLength(person);
+  const rows = matches || [];
+  let totalMin = 0;
+  let xg = 0;
+  let starts = 0;
+  let subEntries = 0;
+  rows.forEach((match) => {
+    const minutes = deriveMatchMinutes(match, length);
+    totalMin += minutes;
+    xg += matchExpectedGoals(match, person);
+    const role = cleanMatchRole(match.role);
+    if (role === "ilk11") starts += 1;
+    else if (role === "yedek" && (minutes > 0 || numMatch(match.subIn))) subEntries += 1;
+  });
+  const appearances = rows.filter((m) => deriveMatchMinutes(m, length) > 0).length;
+  const goals = goalCount ?? rows.reduce((sum, m) => sum + numMatch(m.goals), 0);
+  return {
+    totalMin,
+    goals,
+    xg,
+    starts,
+    subEntries,
+    appearances,
+    avgMin: appearances ? totalMin / appearances : 0
+  };
+}
+
 function cleanMatches(list) {
   return cleanList(list, ROW_FIELDS.matches, MATCH_LIMITS, 240).map((row) => {
     const role = cleanMatchRole(row.role);
@@ -1165,8 +1193,9 @@ function matchesTableHTML(matches, seasonId, person, opts = {}) {
   ${footer}`;
 }
 
-function playingTimeStatsGridHTML(agg) {
+function playingTimeStatsGridHTML(agg, opts = {}) {
   if (!agg.appearances) return "";
+  const goalLabel = opts.goalLabel || "Maç golleri (TFF)";
   const goalDelta = agg.goals - agg.xg;
   const deltaLabel = goalDelta >= 0 ? `+${goalDelta.toFixed(2)}` : goalDelta.toFixed(2);
   return `<div class="season-playtime-grid stats stats-wide">
@@ -1174,7 +1203,7 @@ function playingTimeStatsGridHTML(agg) {
     <div class="stat"><span>İlk 11 başlangıç</span><strong>${agg.starts}</strong></div>
     <div class="stat"><span>Yedekten giriş</span><strong>${agg.subEntries}</strong></div>
     <div class="stat"><span>Maç başına ort.</span><strong>${agg.avgMin.toFixed(1)}'</strong></div>
-    <div class="stat"><span>Maç golleri (TFF)</span><strong>${agg.goals}</strong></div>
+    <div class="stat"><span>${esc(goalLabel)}</span><strong>${agg.goals}</strong></div>
     <div class="stat"><span>Gol beklentisi (xG)</span><strong>${agg.xg.toFixed(2)}</strong></div>
     <div class="stat"><span>Gol − xG</span><strong>${deltaLabel}</strong></div>
   </div>`;
@@ -1304,11 +1333,14 @@ function askfLeagueCards(askf, season, competition) {
   return (askf.cards || []).filter((c) => belongsToLeague(c, season, competition));
 }
 
-function askfSeasonMatchRows(matches) {
+function askfSeasonMatchRows(matches, person) {
   if (!matches.length) return `<p class="empty">Bu lig için maç kaydı yok.</p>`;
   const body = matches.map((match) => {
     const role = match.role ? roleLabel(match.role) : "—";
-    const mins = match.minutes ? `${match.minutes}'` : "—";
+    const minutes = person ? deriveMatchMinutes(match, matchLength(person)) : numMatch(match.minutes);
+    const mins = minutes ? `${minutes}'` : (match.minutes ? `${match.minutes}'` : "—");
+    const xg = person && minutes ? matchExpectedGoals(match, person).toFixed(2) : "—";
+    const goals = numMatch(match.goals);
     return `<tr>
       <td class="match-when">${esc(match.date)}</td>
       <td class="match-teams">${esc(match.matchup)}</td>
@@ -1317,11 +1349,13 @@ function askfSeasonMatchRows(matches) {
       <td class="match-play">${formatMinuteMark(match.subIn)}</td>
       <td class="match-play">${formatMinuteMark(match.subOut)}</td>
       <td class="match-play match-min"><strong>${mins}</strong></td>
+      <td class="match-play">${goals || "—"}</td>
+      <td class="match-play match-xg">${xg}</td>
     </tr>`;
   }).join("");
   return `<div class="match-scroll season-match-scroll" tabindex="0">
-    <table class="match-table match-table-season">
-      <thead><tr><th>Tarih</th><th>Maç</th><th>Skor</th><th>Kadro</th><th>Giriş</th><th>Çıkış</th><th>Dk</th></tr></thead>
+    <table class="match-table match-table-season match-table-askf">
+      <thead><tr><th>Tarih</th><th>Maç</th><th>Skor</th><th>Kadro</th><th>Giriş</th><th>Çıkış</th><th>Dk</th><th>G</th><th>xG</th></tr></thead>
       <tbody>${body}</tbody>
     </table>
   </div>`;
@@ -1397,13 +1431,20 @@ function buildSeasonCardItems(person) {
   return items;
 }
 
-function askfSeasonCardBody(askf, season, competition) {
+function askfSeasonCardBody(askf, season, competition, person) {
   const matches = askfLeagueMatches(askf, season, competition);
   const goals = askfLeagueGoals(askf, season, competition);
   const discipline = askfLeagueCards(askf, season, competition);
-  return `<div class="season-subblock">
+  const agg = askfPlayingTimeAggregate(matches, goals.length, person);
+  const playtime = playingTimeStatsGridHTML(agg, { goalLabel: "Maç golleri" });
+  return `${playtime ? `<div class="season-subblock">
+      <h3 class="season-subtitle">Oynama süresi</h3>
+      <p class="match-note season-inline-note">Giriş, çıkış ve dakika ASKF maç kaydından; xG profil modelinden (gol/90).</p>
+      ${playtime}
+    </div>` : ""}
+    <div class="season-subblock">
       <h3 class="season-subtitle">Maçlar <span class="season-count">${matches.length}</span></h3>
-      ${askfSeasonMatchRows(matches)}
+      ${askfSeasonMatchRows(matches, person)}
     </div>
     <div class="season-subblock">
       <h3 class="season-subtitle">Goller <span class="season-count">${goals.length}</span></h3>
@@ -1426,7 +1467,7 @@ function tffSeasonCardBody(person, season) {
     : "";
   return `${playingTimeStatsGridHTML(agg) ? `<div class="season-subblock">
       <h3 class="season-subtitle">Oynama süresi</h3>
-      ${playingTimeStatsGridHTML(agg)}
+      ${playingTimeStatsGridHTML(agg, { goalLabel: "Maç golleri (TFF)" })}
     </div>` : ""}
     ${goalsBlock}
     <div class="season-subblock">
@@ -1450,15 +1491,20 @@ function seasonCardsHTML(person) {
     if (item.kind === "askf") {
       const row = item.askfRow;
       const { season, competition } = parseCareerLeague(row.league);
+      const leagueMatches = askfLeagueMatches(askf, season, competition);
+      const leagueGoals = askfLeagueGoals(askf, season, competition);
+      const agg = askfPlayingTimeAggregate(leagueMatches, leagueGoals.length, person);
       stats = [
         ["Maç", row.played],
         ["Gol", row.goals],
-        ["Giriş", row.subIn],
-        ["Çıkış", row.subOut],
+        agg.appearances ? ["Süre", formatDurationTotal(agg.totalMin)] : ["Giriş", row.subIn],
+        agg.appearances ? ["İlk 11", String(agg.starts)] : ["Çıkış", row.subOut],
+        agg.appearances ? ["Ort. dk", `${agg.avgMin.toFixed(1)}'`] : null,
+        agg.xg ? ["xG", agg.xg.toFixed(2)] : null,
         row.yellow !== "0" ? ["Sarı", row.yellow] : null,
         row.red !== "0" ? ["Kırmızı", row.red] : null
       ].filter(Boolean);
-      body = askfSeasonCardBody(askf, season, competition);
+      body = askfSeasonCardBody(askf, season, competition, person);
     } else {
       extraClass = " season-card-tff";
       const season = item.tffSeason;

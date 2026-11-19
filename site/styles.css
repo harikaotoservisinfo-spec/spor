@@ -1455,6 +1455,10 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   min-width: 36rem;
 }
 
+.match-table-askf {
+  min-width: 40rem;
+}
+
 .match-table th,
 .match-table td {
   text-align: left;
