@@ -4,7 +4,7 @@ const CHAPTERS = [
   { id: "kisi", index: "01", title: "Kişi", kicker: "Önce insan", line: "Formadan önce gelen taraf." },
   { id: "futbolcu", index: "02", title: "Futbolcu", kicker: "Sahada", line: "Numara, mevki, oyun fikri." },
   { id: "istatistikler", index: "03", title: "İstatistikler", kicker: "Rakamlar", line: "Sezon, maç ve sahaya yansıyan sayılar." },
-  { id: "elci", index: "04", title: "Elçi", kicker: "Duruş", line: "Oyunun içinde nasıl durduğu." },
+  { id: "mac", index: "04", title: "Haftanın Maçı", kicker: "Bu hafta", line: "Rakip, saat, adres ve geri sayım." },
   { id: "projeler", index: "05", title: "Galeri", kicker: "Maç arşivi", line: "Maçlardan fotoğraf ve video." },
   { id: "iletisim", index: "06", title: "İletişim", kicker: "Hat", line: "Aile iletişimi ve doğrudan ulaşım." },
   { id: "form", index: "07", title: "Form", kicker: "Yaz", line: "Mesajınız e-posta ile iletilir." }
@@ -104,6 +104,7 @@ let editorOpen = false;
 let galleryObjectUrls = [];
 let galleryFilter = "all";
 let galleryLightboxId = null;
+let fixtureCountdownTimer = null;
 
 function isAdmin() {
   return localStorage.getItem(ADMIN_STORAGE) === "1";
@@ -201,6 +202,159 @@ function phoneTel(digits) {
   return `+${d}`;
 }
 
+function safeMapsUrl(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:") return "";
+    const host = url.hostname.toLowerCase();
+    if (
+      !host.includes("google.")
+      && host !== "maps.app.goo.gl"
+      && !host.endsWith("goo.gl")
+      && !host.includes("openstreetmap")
+    ) return "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
+function weeklyMatchData(person) {
+  const src = person?.weeklyMatch && typeof person.weeklyMatch === "object" ? person.weeklyMatch : {};
+  const fb = DEFAULT.weeklyMatch || {};
+  const team = person?.team || "Çisem Spor";
+  const homeName = cleanLine(src.homeName, 80, fb.homeName || team);
+  const awayName = cleanLine(src.awayName, 80, fb.awayName || "");
+  let homeLogo = PHOTO_PATH.test(String(src.homeLogo || "").trim()) ? String(src.homeLogo).trim() : "";
+  let awayLogo = PHOTO_PATH.test(String(src.awayLogo || "").trim()) ? String(src.awayLogo).trim() : "";
+  if (!homeLogo && clubIsCisem(homeName) && person?.teamLogo) homeLogo = person.teamLogo;
+  if (!awayLogo && clubIsCisem(awayName) && person?.teamLogo) awayLogo = person.teamLogo;
+  return {
+    date: cleanLine(src.date, 16, fb.date || ""),
+    time: cleanLine(src.time, 8, fb.time || "15:00"),
+    competition: cleanLine(src.competition, 80, fb.competition || ""),
+    round: cleanLine(src.round, 40, fb.round || ""),
+    homeName,
+    awayName,
+    homeLogo,
+    awayLogo,
+    venueName: cleanLine(src.venueName, 80, fb.venueName || ""),
+    venueAddress: cleanBlock(src.venueAddress, 240),
+    venueCity: cleanLine(src.venueCity, 40, fb.venueCity || "Antalya"),
+    mapsUrl: safeMapsUrl(src.mapsUrl) || safeMapsUrl(fb.mapsUrl),
+    note: cleanBlock(src.note, 400)
+  };
+}
+
+function cleanWeeklyMatch(source, useFallback) {
+  const fb = useFallback ? DEFAULT.weeklyMatch || {} : {};
+  const src = source && typeof source === "object" ? source : {};
+  return {
+    date: cleanLine(src.date, 16, fb.date || ""),
+    time: cleanLine(src.time, 8, fb.time || "15:00"),
+    competition: cleanLine(src.competition, 80, fb.competition || ""),
+    round: cleanLine(src.round, 40, fb.round || ""),
+    homeName: cleanLine(src.homeName, 80, fb.homeName || ""),
+    awayName: cleanLine(src.awayName, 80, fb.awayName || ""),
+    homeLogo: PHOTO_PATH.test(String(src.homeLogo ?? "").trim()) ? String(src.homeLogo).trim() : (fb.homeLogo || ""),
+    awayLogo: PHOTO_PATH.test(String(src.awayLogo ?? "").trim()) ? String(src.awayLogo).trim() : (fb.awayLogo || ""),
+    venueName: cleanLine(src.venueName, 80, fb.venueName || ""),
+    venueAddress: cleanBlock(src.venueAddress, 240) || (useFallback ? cleanBlock(fb.venueAddress, 240) : ""),
+    venueCity: cleanLine(src.venueCity, 40, fb.venueCity || "Antalya"),
+    mapsUrl: safeMapsUrl(src.mapsUrl) || (useFallback ? safeMapsUrl(fb.mapsUrl) : ""),
+    note: cleanBlock(src.note, 400)
+  };
+}
+
+function mergeWeeklyMatch(data) {
+  const row = cleanWeeklyMatch(data, true);
+  if (row.date || row.awayName) return row;
+  return cleanWeeklyMatch(DEFAULT.weeklyMatch, true);
+}
+
+function parseFixtureDateTime(dateStr, timeStr) {
+  const dm = String(dateStr || "").trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (!dm) return null;
+  const tm = String(timeStr || "15:00").trim().match(/^(\d{1,2})[.:](\d{2})$/);
+  const day = Number(dm[1]);
+  const month = Number(dm[2]) - 1;
+  const year = Number(dm[3]);
+  const hour = tm ? Number(tm[1]) : 15;
+  const minute = tm ? Number(tm[2]) : 0;
+  if (!day || month < 0 || !year) return null;
+  return new Date(year, month, day, hour, minute, 0, 0);
+}
+
+function formatFixtureTime(timeStr) {
+  const tm = String(timeStr || "").trim().match(/^(\d{1,2})[.:](\d{2})$/);
+  if (!tm) return timeStr || "—";
+  return `${tm[1].padStart(2, "0")}:${tm[2]}`;
+}
+
+function fixtureCrestHTML(name, logo, side) {
+  const short = shortClubName(name);
+  const initial = short.slice(0, 1) || "?";
+  const img = logo
+    ? `<img src="${esc(logo)}" alt="${esc(short)} amblemi" width="120" height="120" decoding="async" loading="lazy">`
+    : `<span class="fixture-crest-fallback" aria-hidden="true">${esc(initial)}</span>`;
+  const us = clubIsCisem(name) ? " fixture-side-us" : "";
+  return `<div class="fixture-side fixture-side-${side}${us}">
+    <div class="fixture-crest">${img}</div>
+    <p class="fixture-club">${clubNameHTML(name)}</p>
+  </div>`;
+}
+
+function clearFixtureCountdown() {
+  if (fixtureCountdownTimer) {
+    clearInterval(fixtureCountdownTimer);
+    fixtureCountdownTimer = null;
+  }
+}
+
+function bindFixtureCountdown() {
+  clearFixtureCountdown();
+  const root = document.getElementById("fixture-countdown");
+  if (!root) return;
+  const target = parseFixtureDateTime(root.dataset.date, root.dataset.time);
+  const grid = root.querySelector(".fixture-countdown-grid");
+  const label = root.querySelector(".fixture-countdown-label");
+  if (!target || !grid) return;
+  const parts = {
+    days: grid.querySelector('[data-cd="days"]'),
+    hours: grid.querySelector('[data-cd="hours"]'),
+    minutes: grid.querySelector('[data-cd="minutes"]'),
+    seconds: grid.querySelector('[data-cd="seconds"]')
+  };
+  const pad = (n) => String(n).padStart(2, "0");
+  const tick = () => {
+    const diff = target.getTime() - Date.now();
+    if (diff <= 0) {
+      root.classList.add("is-past");
+      if (label) label.textContent = "Maç saati";
+      if (parts.days) parts.days.textContent = "00";
+      if (parts.hours) parts.hours.textContent = "00";
+      if (parts.minutes) parts.minutes.textContent = "00";
+      if (parts.seconds) parts.seconds.textContent = "00";
+      clearFixtureCountdown();
+      return;
+    }
+    const totalSec = Math.floor(diff / 1000);
+    const days = Math.floor(totalSec / 86400);
+    const hours = Math.floor((totalSec % 86400) / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const seconds = totalSec % 60;
+    if (parts.days) parts.days.textContent = pad(Math.min(days, 99));
+    if (parts.hours) parts.hours.textContent = pad(hours);
+    if (parts.minutes) parts.minutes.textContent = pad(minutes);
+    if (parts.seconds) parts.seconds.textContent = pad(seconds);
+    if (label) label.textContent = days > 0 ? "Maça kalan süre" : "Maça kalan";
+  };
+  tick();
+  fixtureCountdownTimer = setInterval(tick, 1000);
+}
+
 function safeSocialUrl(value, kind) {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
@@ -261,12 +415,13 @@ function cleanPhotos(list, max = 24) {
     if (!PHOTO_PATH.test(file)) return null;
     let chapter = cleanLine(item?.chapter, 20).toLocaleLowerCase("tr");
     if (chapter === "kupalar") chapter = "istatistikler";
+    if (chapter === "elci") chapter = "mac";
     if (!CHAPTERS.some((ch) => ch.id === chapter)) {
       if (file.includes("portre")) chapter = "kisi";
       else if (file.includes("futbolcu")) chapter = "futbolcu";
       else if (file.includes("projeler")) chapter = "projeler";
       else if (file.includes("kupalar") || file.includes("istatistik")) chapter = "istatistikler";
-      else if (file.includes("elci")) chapter = "elci";
+      else if (file.includes("elci") || file.includes("mac")) chapter = "mac";
       else chapter = "";
     }
     return {
@@ -293,7 +448,7 @@ function chapterPhoto(person, id) {
   const photos = person.photos || [];
   const hit = photos.find((photo) => photo.chapter === id);
   if (hit) return hit;
-  const index = { kisi: 0, futbolcu: 1, istatistikler: 2, kupalar: 2, elci: 3, projeler: 4, iletisim: 5, form: 5 }[id];
+  const index = { kisi: 0, futbolcu: 1, istatistikler: 2, kupalar: 2, mac: 3, elci: 3, projeler: 4, iletisim: 5, form: 5 }[id];
   if (index !== undefined && photos[index]) return photos[index];
   return null;
 }
@@ -947,6 +1102,7 @@ function sanitize(data, useFallback = true) {
     values: cleanList(source.values, ["title", "text"], { title: 40, text: 240 }),
     dreams: cleanList(source.dreams, ["title", "text"], { title: 40, text: 240 }),
     gallery: mergeGallery(cleanGallery(source.gallery, useFallback)),
+    weeklyMatch: mergeWeeklyMatch(source.weeklyMatch),
     contact: (() => {
       const src = source.contact && typeof source.contact === "object" ? source.contact : {};
       const fb = useFallback ? DEFAULT.contact || {} : {};
@@ -1040,6 +1196,7 @@ function route() {
   const raw = decodeURIComponent(location.hash.replace(/^#/, ""));
   let id = raw === "kupalar" ? "istatistikler" : raw;
   if (id === "galeri") id = "projeler";
+  if (id === "elci") id = "mac";
   return CHAPTERS.some((chapter) => chapter.id === id) ? id : "home";
 }
 
@@ -2618,15 +2775,55 @@ function renderIstatistikler() {
   `, "article-persona article-stats");
 }
 
-function renderElci() {
-  const stance = chapterPhoto(profile, "elci");
-  const lead = stance ? `<div class="article-photo">${photoFigure(stance, "portrait hero ambassador")}</div>` : "";
+function renderMac() {
+  const fx = weeklyMatchData(profile);
+  const stance = chapterPhoto(profile, "mac");
+  const lead = stance ? `<div class="article-photo fixture-hero">${photoFigure(stance, "portrait hero fixture")}</div>` : "";
+  const when = [fx.date, formatFixtureTime(fx.time)].filter(Boolean).join(" · ");
+  const meta = [fx.competition, fx.round].filter(Boolean).join(" · ");
+  const venueLines = [fx.venueName, fx.venueAddress, fx.venueCity].filter(Boolean);
+  const maps = fx.mapsUrl
+    ? `<a class="fixture-maps" href="${esc(fx.mapsUrl)}" target="_blank" rel="noopener noreferrer">Haritada aç</a>`
+    : "";
+  const empty = !fx.date && !fx.awayName;
+  const board = empty
+    ? `<p class="empty">${isAdmin() ? "Düzenle → Haftanın maçı bölümünden tarih, rakip ve adres girin." : "Bu hafta için maç bilgisi henüz eklenmedi."}</p>`
+    : `<div class="fixture-board">
+      <header class="fixture-head">
+        ${meta ? `<p class="fixture-meta">${esc(meta)}</p>` : ""}
+        ${when ? `<p class="fixture-when"><time datetime="">${esc(when)}</time></p>` : ""}
+      </header>
+      <div class="fixture-matchup">
+        ${fixtureCrestHTML(fx.homeName, fx.homeLogo, "home")}
+        <div class="fixture-center" aria-hidden="true">
+          <span class="fixture-vs">VS</span>
+          ${when ? `<span class="fixture-kickoff">${esc(formatFixtureTime(fx.time))}</span>` : ""}
+        </div>
+        ${fixtureCrestHTML(fx.awayName, fx.awayLogo, "away")}
+      </div>
+      <div id="fixture-countdown" class="fixture-countdown" data-date="${esc(fx.date)}" data-time="${esc(fx.time)}">
+        <p class="fixture-countdown-label">Maça kalan süre</p>
+        <div class="fixture-countdown-grid" role="timer" aria-live="polite">
+          <div class="fixture-cd-unit"><strong data-cd="days">00</strong><span>Gün</span></div>
+          <div class="fixture-cd-unit"><strong data-cd="hours">00</strong><span>Saat</span></div>
+          <div class="fixture-cd-unit"><strong data-cd="minutes">00</strong><span>Dk</span></div>
+          <div class="fixture-cd-unit"><strong data-cd="seconds">00</strong><span>Sn</span></div>
+        </div>
+      </div>
+      ${venueLines.length ? `<section class="fixture-venue">
+        <h2>Saha & adres</h2>
+        <address class="fixture-address">
+          ${venueLines.map((line) => `<span>${esc(line)}</span>`).join("")}
+        </address>
+        ${maps}
+      </section>` : ""}
+      ${fx.note ? `<p class="match-note fixture-note">${esc(fx.note)}</p>` : ""}
+    </div>`;
   return chapterFrame(CHAPTERS[3], `
     ${lead}
-    <p class="motto">${esc(profile.motto || "Yön belli. Hareket bende.")}</p>
-    <p class="lede">Elçi burada bir kurum unvanı değil. Oyuna, rakibe ve takıma karşı duruşun adı.</p>
-    <section class="group">${itemsHTML(profile.values, "Duruş cümleleri düzenle menüsünden yazılır.")}</section>
-  `);
+    <p class="lede">Bu haftaki maç — kimle, saat kaçta, nerede. Tribün veya saha kenarı için tek ekran.</p>
+    ${board}
+  `, "article-fixture");
 }
 
 function galleryRevokeUrls() {
@@ -3038,7 +3235,7 @@ const PAGES = {
   kisi: renderKisi,
   futbolcu: renderFutbolcu,
   istatistikler: renderIstatistikler,
-  elci: renderElci,
+  mac: renderMac,
   projeler: renderProjeler,
   iletisim: renderIletisim,
   form: renderForm
@@ -3130,10 +3327,10 @@ function editorHTML() {
       <p class="empty">Dosyalar site klasöründeki <code>photos/</code> içinden gelir. Burada alt yazı ve açıklama yazılır.</p>
       ${rowsHTML("photos", profile.photos)}
       <h2>Futbolcu sayfası</h2>
-      <p class="empty">Çisem Spor, mevki yolculuğu ve hız bölümleri. chapter alanı: kisi, futbolcu, istatistikler, elci, projeler.</p>
+      <p class="empty">Çisem Spor, mevki yolculuğu ve hız bölümleri. chapter alanı: kisi, futbolcu, istatistikler, mac, projeler.</p>
       ${rowsHTML("futbolBlocks", profile.futbolBlocks || [])}
       <h2>Kişi sayfası</h2>
-      <p class="empty">Ramos sitesindeki gibi Kök, Aile, Öğrenim bölümleri. Bölüm fotoğrafı için chapter alanına kisi, futbolcu, istatistikler, elci veya projeler yazın.</p>
+      <p class="empty">Ramos sitesindeki gibi Kök, Aile, Öğrenim bölümleri. Bölüm fotoğrafı için chapter alanına kisi, futbolcu, istatistikler, mac veya projeler yazın.</p>
       ${rowsHTML("personaBlocks", profile.personaBlocks)}
       <h2>Kartlar</h2>
       ${rowsHTML("facts", profile.facts)}
@@ -3152,7 +3349,24 @@ function editorHTML() {
       ${rowsHTML("goalEvents", profile.goalEvents || [])}
       <h2>Kupalar ve ödüller</h2>
       ${rowsHTML("honours", profile.honours)}
-      <h2>Duruş</h2>
+      <h2>Haftanın maçı</h2>
+      <p class="empty">Tarih (GG.AA.YYYY), saat (SS:DD), rakip ve saha bilgisi — canlı sayfada geri sayım ile.</p>
+      <div class="form-grid">
+        ${field("f-wm-date", "Tarih", profile.weeklyMatch?.date || "")}
+        ${field("f-wm-time", "Saat", profile.weeklyMatch?.time || "")}
+        ${field("f-wm-round", "Hafta / tur", profile.weeklyMatch?.round || "")}
+        ${field("f-wm-competition", "Lig", profile.weeklyMatch?.competition || "", "wide")}
+        ${field("f-wm-home", "Ev sahibi", profile.weeklyMatch?.homeName || "")}
+        ${field("f-wm-away", "Misafir", profile.weeklyMatch?.awayName || "")}
+        ${field("f-wm-home-logo", "Ev logosu (photos/…)", profile.weeklyMatch?.homeLogo || "", "wide")}
+        ${field("f-wm-away-logo", "Deplasman logosu", profile.weeklyMatch?.awayLogo || "", "wide")}
+        ${field("f-wm-venue", "Saha adı", profile.weeklyMatch?.venueName || "", "wide")}
+        ${area("f-wm-address", "Adres", profile.weeklyMatch?.venueAddress || "")}
+        ${field("f-wm-city", "Şehir", profile.weeklyMatch?.venueCity || "")}
+        ${field("f-wm-maps", "Harita linki (https)", profile.weeklyMatch?.mapsUrl || "", "wide")}
+        ${area("f-wm-note", "Kısa not", profile.weeklyMatch?.note || "")}
+      </div>
+      <h2>Duruş (eski metinler)</h2>
       ${rowsHTML("values", profile.values)}
       <h2>Maç galerisi</h2>
       <p class="empty">Yükleme ile gelen satırlarda blobKey dolu olur. Sunucu dosyası için type ve src: photos/gallery/dosya.jpg</p>
@@ -3214,6 +3428,8 @@ function renderPage() {
   document.body.classList.toggle("is-admin", isAdmin());
   if (page === "projeler") void hydrateGallery();
   if (page === "form") bindContactForm();
+  if (page === "mac") bindFixtureCountdown();
+  else clearFixtureCountdown();
 }
 
 function syncChrome() {
@@ -3250,6 +3466,21 @@ function readForm(useFallback = false) {
     idol: value("f-idol"),
     youtube: value("f-youtube"),
     instagram: value("f-instagram"),
+    weeklyMatch: {
+      date: value("f-wm-date"),
+      time: value("f-wm-time"),
+      round: value("f-wm-round"),
+      competition: value("f-wm-competition"),
+      homeName: value("f-wm-home"),
+      awayName: value("f-wm-away"),
+      homeLogo: value("f-wm-home-logo"),
+      awayLogo: value("f-wm-away-logo"),
+      venueName: value("f-wm-venue"),
+      venueAddress: value("f-wm-address"),
+      venueCity: value("f-wm-city"),
+      mapsUrl: value("f-wm-maps"),
+      note: value("f-wm-note")
+    },
     contact: {
       relation: value("f-contact-relation"),
       name: value("f-contact-name"),
