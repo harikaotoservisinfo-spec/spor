@@ -4,7 +4,7 @@ const CHAPTERS = [
   { id: "futbolcu", index: "02", title: "Futbolcu", kicker: "Sahada", line: "Numara, mevki, oyun fikri." },
   { id: "istatistikler", index: "03", title: "İstatistikler", kicker: "Rakamlar", line: "Sezon, maç ve sahaya yansıyan sayılar." },
   { id: "elci", index: "04", title: "Elçi", kicker: "Duruş", line: "Oyunun içinde nasıl durduğu." },
-  { id: "projeler", index: "05", title: "Projeler", kicker: "Kurulanlar", line: "Bitmemiş, başlamış işler." }
+  { id: "projeler", index: "05", title: "Galeri", kicker: "Maç arşivi", line: "Maçlardan fotoğraf ve video." }
 ];
 
 const SPOTS = [
@@ -34,12 +34,17 @@ const ROW_FIELDS = {
   honours: ["year", "title", "detail"],
   values: ["title", "text"],
   dreams: ["title", "text"],
+  gallery: ["id", "type", "src", "blobKey", "matchMacId", "matchLabel", "date", "caption"],
   photos: ["file", "alt", "caption", "chapter"],
   personaBlocks: ["title", "text", "chapter", "align"],
   futbolBlocks: ["title", "text", "chapter", "align"]
 };
 
 const PHOTO_PATH = /^photos\/[a-z0-9._-]+\.(png|jpe?g|webp)$/i;
+const GALLERY_PATH = /^photos\/(?:gallery\/)?[a-z0-9._-]+\.(png|jpe?g|webp|mp4|webm|mov)$/i;
+const GALLERY_LIMITS = { id: 48, type: 12, src: 120, blobKey: 48, matchMacId: 16, matchLabel: 80, date: 16, caption: 200 };
+const GALLERY_MAX_IMAGE = 12 * 1024 * 1024;
+const GALLERY_MAX_VIDEO = 80 * 1024 * 1024;
 
 const PLACEHOLDERS = {
   label: "Başlık",
@@ -70,7 +75,13 @@ const PLACEHOLDERS = {
   subOut: "57",
   minutes: "57",
   minute: "67",
-  type: "F - Ayak"
+  type: "F - Ayak",
+  blobKey: "g-abc",
+  matchMacId: "300799",
+  matchLabel: "Maç satırı",
+  caption: "Açıklama",
+  id: "g-unique",
+  src: "photos/gallery/ornek.jpg"
 };
 
 const GOAL_LIMITS = { season: 12, macId: 12, minute: 4, type: 24, date: 16 };
@@ -79,6 +90,9 @@ const DEFAULT = window.SAHA_DEFAULT;
 let profile;
 let menuOpen = false;
 let editorOpen = false;
+let galleryObjectUrls = [];
+let galleryFilter = "all";
+let galleryLightboxId = null;
 let reelObserver = null;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -754,8 +768,37 @@ function sanitize(data, useFallback = true) {
     gameStats: mergeGameStats(cleanList(source.gameStats, ["label", "value"], { label: 40, value: 80 })),
     honours: cleanList(source.honours, ["year", "title", "detail"], { year: 12, title: 60, detail: 180 }),
     values: cleanList(source.values, ["title", "text"], { title: 40, text: 240 }),
-    dreams: cleanList(source.dreams, ["title", "text"], { title: 40, text: 240 })
+    dreams: cleanList(source.dreams, ["title", "text"], { title: 40, text: 240 }),
+    gallery: mergeGallery(cleanGallery(source.gallery, useFallback))
   };
+}
+
+function cleanGallery(list, useFallback) {
+  if (!Array.isArray(list) || !list.length) {
+    return useFallback ? (DEFAULT.gallery || []).map((item) => ({ ...item })) : [];
+  }
+  return list.slice(0, 200).map((item) => {
+    const type = String(item?.type || "image").toLowerCase() === "video" ? "video" : "image";
+    const src = String(item?.src || "").trim();
+    const safeSrc = GALLERY_PATH.test(src) ? src : "";
+    const row = {
+      id: cleanLine(item?.id, 48) || `g-${Math.random().toString(36).slice(2, 10)}`,
+      type,
+      src: item?.blobKey ? "" : safeSrc,
+      blobKey: cleanLine(item?.blobKey, 48),
+      matchMacId: cleanLine(item?.matchMacId, 16),
+      matchLabel: cleanLine(item?.matchLabel, 80),
+      date: cleanLine(item?.date, 16),
+      caption: cleanLine(item?.caption, 200)
+    };
+    if (!row.blobKey && !row.src) return null;
+    return row;
+  }).filter(Boolean);
+}
+
+function mergeGallery(list) {
+  if (list?.length) return list;
+  return (DEFAULT.gallery || []).map((item) => ({ ...item }));
 }
 
 function load() {
@@ -2382,14 +2425,192 @@ function renderElci() {
   `);
 }
 
+function galleryRevokeUrls() {
+  galleryObjectUrls.forEach((url) => {
+    try {
+      URL.revokeObjectURL(url);
+    } catch (_) {}
+  });
+  galleryObjectUrls = [];
+}
+
+function newGalleryId() {
+  return `g-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function persistProfile() {
+  localStorage.setItem(KEY, JSON.stringify(profile));
+}
+
+function galleryMatchCatalog(person) {
+  const rows = [];
+  (person.matches || []).forEach((m) => {
+    const label = `${m.date || "Tarih yok"} · ${shortClubName(m.home)} ${m.score || "-"} ${shortClubName(m.away)}`;
+    rows.push({ macId: String(m.macId || "").trim(), label, date: m.date || "" });
+  });
+  (person.askf?.matches || []).forEach((m) => {
+    const label = `${m.date || ""} · ${(m.home || "").trim()} ${m.score || ""} ${(m.away || "").trim()}`.trim();
+    if (!label.replace(/[·\s\-]/g, "")) return;
+    rows.push({ macId: String(m.macId || m.id || "").trim(), label: label.slice(0, 90), date: m.date || "" });
+  });
+  return rows;
+}
+
+function galleryFilteredItems(person) {
+  const items = [...(person.gallery || [])];
+  items.sort((a, b) => (parseMatchDate(b.date) || 0) - (parseMatchDate(a.date) || 0));
+  if (galleryFilter === "all") return items;
+  return items.filter((item) => item.matchMacId === galleryFilter);
+}
+
+function galleryCardHTML(item) {
+  const isVideo = item.type === "video";
+  const media = isVideo
+    ? `<video class="gallery-thumb-video" muted playsinline preload="metadata" data-gallery-media="${esc(item.id)}"></video><span class="gallery-badge">Video</span>`
+    : `<img class="gallery-thumb-img" alt="" loading="lazy" decoding="async" data-gallery-media="${esc(item.id)}">`;
+  return `<article class="gallery-card" data-gallery-id="${esc(item.id)}">
+    <button type="button" class="gallery-open" data-action="gallery-open" data-id="${esc(item.id)}" aria-label="Büyüt">
+      ${media}
+    </button>
+    <div class="gallery-card-meta">
+      <p class="gallery-card-title">${esc(item.matchLabel || item.caption || "Maç")}</p>
+      ${item.date ? `<p class="gallery-card-date">${esc(item.date)}</p>` : ""}
+      ${item.caption && item.matchLabel ? `<p class="gallery-card-cap">${esc(item.caption)}</p>` : ""}
+    </div>
+    <button type="button" class="gallery-remove textbtn" data-action="gallery-remove" data-id="${esc(item.id)}">Sil</button>
+  </article>`;
+}
+
+function galleryLightboxHTML(person) {
+  if (!galleryLightboxId) return "";
+  const item = (person.gallery || []).find((g) => g.id === galleryLightboxId);
+  if (!item) return "";
+  const cap = [item.matchLabel, item.date, item.caption].filter(Boolean).join(" · ");
+  const inner = item.type === "video"
+    ? `<video class="gallery-lightbox-media" controls playsinline data-gallery-lightbox-media="${esc(item.id)}"></video>`
+    : `<img class="gallery-lightbox-media" alt="" data-gallery-lightbox-media="${esc(item.id)}">`;
+  return `<div class="gallery-lightbox" role="dialog" aria-modal="true" aria-label="Medya">
+    <button type="button" class="gallery-lightbox-backdrop" data-action="gallery-close" aria-label="Kapat"></button>
+    <div class="gallery-lightbox-inner">
+      ${inner}
+      ${cap ? `<p class="gallery-lightbox-cap">${esc(cap)}</p>` : ""}
+      <button type="button" class="textbtn gallery-lightbox-close" data-action="gallery-close">Kapat</button>
+    </div>
+  </div>`;
+}
+
 function renderProjeler() {
+  galleryRevokeUrls();
   const visual = chapterPhoto(profile, "projeler");
   const lead = visual ? `<div class="article-photo">${photoFigure(visual, "portrait hero stadium")}</div>` : "";
+  const matches = galleryMatchCatalog(profile);
+  const filterOpts = `<option value="all"${galleryFilter === "all" ? " selected" : ""}>Tüm medya</option>${matches
+    .filter((m) => m.macId)
+    .map((m) => `<option value="${esc(m.macId)}"${galleryFilter === m.macId ? " selected" : ""}>${esc(m.label)}</option>`)
+    .join("")}`;
+  const uploadMatchOpts = `<option value="">Maç seçmeden</option>${matches.map((m) => `<option value="${esc(m.macId)}">${esc(m.label)}</option>`).join("")}`;
+  const items = galleryFilteredItems(profile);
+  const grid = items.length
+    ? `<div class="gallery-grid" id="gallery-grid">${items.map((item) => galleryCardHTML(item)).join("")}</div>`
+    : `<p class="empty">Henüz medya yok. Aşağıdan fotoğraf veya video yükleyin.</p>`;
   return chapterFrame(CHAPTERS[4], `
     ${lead}
-    <p class="lede">Bitmiş işlerin listesi değil. Kuzey Akıncı adının altında duran, süren işler.</p>
-    <section class="group">${itemsHTML(profile.dreams, "İlk proje buraya yazılır.")}</section>
+    <p class="lede">Maçlardan fotoğraf ve kısa videolar. Yüklenen dosyalar bu cihazda saklanır; sunucuda kalıcı kopya için aynı dosyayı <code>photos/gallery/</code> klasörüne de koyabilirsiniz.</p>
+    <section class="gallery-toolbar">
+      <label class="field gallery-field">
+        <span>Filtre</span>
+        <select id="gallery-filter" data-action="gallery-filter">${filterOpts}</select>
+      </label>
+      <label class="field gallery-field">
+        <span>Bu maça ekle</span>
+        <select id="gallery-upload-match">${uploadMatchOpts}</select>
+      </label>
+      <label class="gallery-upload primary">
+        Medya yükle
+        <input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" multiple hidden data-action="gallery-pick">
+      </label>
+    </section>
+    ${grid}
+    ${galleryLightboxHTML(profile)}
   `);
+}
+
+async function galleryMediaUrl(item) {
+  if (item.src) return item.src;
+  if (item.blobKey && window.SahaGalleryStore) {
+    const blob = await window.SahaGalleryStore.get(item.blobKey);
+    if (!blob) return "";
+    const url = URL.createObjectURL(blob);
+    galleryObjectUrls.push(url);
+    return url;
+  }
+  return "";
+}
+
+async function hydrateGallery() {
+  if (route() !== "projeler") return;
+  const items = profile.gallery || [];
+  await Promise.all(
+    items.map(async (item) => {
+      const url = await galleryMediaUrl(item);
+      if (!url) return;
+      document.querySelectorAll(`[data-gallery-media="${CSS.escape(item.id)}"], [data-gallery-lightbox-media="${CSS.escape(item.id)}"]`).forEach((el) => {
+        if (el.tagName === "VIDEO") {
+          el.src = url;
+          try {
+            el.load();
+          } catch (_) {}
+        } else {
+          el.src = url;
+        }
+      });
+    })
+  );
+}
+
+async function handleGalleryUpload(fileList) {
+  if (!window.SahaGalleryStore) return;
+  const macId = document.getElementById("gallery-upload-match")?.value || "";
+  const match = galleryMatchCatalog(profile).find((m) => m.macId === macId);
+  profile.gallery = profile.gallery || [];
+  let added = 0;
+  for (const file of fileList) {
+    const isVideo = (file.type || "").startsWith("video/");
+    const max = isVideo ? GALLERY_MAX_VIDEO : GALLERY_MAX_IMAGE;
+    if (file.size > max) {
+      window.alert(`${file.name} çok büyük (üst sınır: ${isVideo ? "80" : "12"} MB).`);
+      continue;
+    }
+    const id = newGalleryId();
+    await window.SahaGalleryStore.put(id, file);
+    profile.gallery.unshift({
+      id,
+      type: isVideo ? "video" : "image",
+      src: "",
+      blobKey: id,
+      matchMacId: macId,
+      matchLabel: match?.label || "",
+      date: match?.date || "",
+      caption: file.name.replace(/\.[^.]+$/i, "")
+    });
+    added += 1;
+  }
+  if (!added) return;
+  persistProfile();
+  galleryLightboxId = null;
+  renderPage();
+  syncChrome();
+}
+
+async function removeGalleryItem(id) {
+  const item = (profile.gallery || []).find((g) => g.id === id);
+  if (!item) return;
+  if (item.blobKey && window.SahaGalleryStore) await window.SahaGalleryStore.remove(item.blobKey);
+  profile.gallery = (profile.gallery || []).filter((g) => g.id !== id);
+  if (galleryLightboxId === id) galleryLightboxId = null;
+  persistProfile();
+  renderPage();
+  syncChrome();
 }
 
 const PAGES = {
@@ -2502,7 +2723,10 @@ function editorHTML() {
       ${rowsHTML("honours", profile.honours)}
       <h2>Duruş</h2>
       ${rowsHTML("values", profile.values)}
-      <h2>Projeler</h2>
+      <h2>Maç galerisi</h2>
+      <p class="empty">Yükleme ile gelen satırlarda blobKey dolu olur. Sunucu dosyası için type ve src: photos/gallery/dosya.jpg</p>
+      ${rowsHTML("gallery", profile.gallery || [])}
+      <h2>Projeler (eski metin)</h2>
       ${rowsHTML("dreams", profile.dreams)}
       <h2>Dosya</h2>
       <div class="tools">
@@ -2554,6 +2778,8 @@ function renderPage() {
     setScene(page);
     window.scrollTo(0, 0);
   }
+  document.body.classList.toggle("gallery-lightbox-open", Boolean(galleryLightboxId));
+  if (page === "projeler") void hydrateGallery();
 }
 
 function syncChrome() {
@@ -2625,7 +2851,8 @@ function readForm(useFallback = false) {
     stats: readRows("stats"),
     honours: readRows("honours"),
     values: readRows("values"),
-    dreams: readRows("dreams")
+    dreams: readRows("dreams"),
+    gallery: readRows("gallery")
   }, useFallback);
 }
 
@@ -2752,10 +2979,21 @@ document.body.addEventListener("click", (event) => {
     renderPage();
     syncChrome();
   } else if (action === "stats-tab" || action === "stats-tab-jump") {
-  switchStatsTab(target.dataset.tab || "sezonlar");
-  if (action === "stats-tab-jump") {
-    document.getElementById("askf-sezonlar")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+    switchStatsTab(target.dataset.tab || "sezonlar");
+    if (action === "stats-tab-jump") {
+      document.getElementById("askf-sezonlar")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  } else if (action === "gallery-open") {
+    galleryLightboxId = target.dataset.id || null;
+    renderPage();
+    syncChrome();
+  } else if (action === "gallery-close") {
+    galleryLightboxId = null;
+    renderPage();
+    syncChrome();
+  } else if (action === "gallery-remove") {
+    const id = target.dataset.id;
+    if (id && window.confirm("Bu medya silinsin mi?")) void removeGalleryItem(id);
   }
 });
 
@@ -2783,6 +3021,18 @@ document.body.addEventListener("input", (event) => {
 });
 
 document.body.addEventListener("change", (event) => {
+  if (event.target.id === "gallery-filter") {
+    galleryFilter = event.target.value || "all";
+    galleryLightboxId = null;
+    renderPage();
+    syncChrome();
+    return;
+  }
+  if (event.target.dataset.action === "gallery-pick" && event.target.files?.length) {
+    void handleGalleryUpload(event.target.files);
+    event.target.value = "";
+    return;
+  }
   if (event.target.id === "import-file" && event.target.files?.[0]) {
     importProfile(event.target.files[0]);
   }
@@ -2790,6 +3040,12 @@ document.body.addEventListener("change", (event) => {
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
+  if (galleryLightboxId) {
+    galleryLightboxId = null;
+    renderPage();
+    syncChrome();
+    return;
+  }
   if (editorOpen) closeEditor();
   else if (menuOpen) {
     menuOpen = false;
