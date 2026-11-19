@@ -1295,34 +1295,59 @@ function kpiIcon(kind) {
   return icons[kind] || "";
 }
 
-function askfTotalsHTML(askf) {
-  const t = askf.totals || {};
-  const played = numMatch(t.played);
-  const goals = numMatch(t.goals);
+function tffSeasonTotals(person) {
+  return (person.seasons || []).reduce(
+    (acc, season) => {
+      acc.played += numMatch(season.played);
+      acc.goals += numMatch(season.goals);
+      acc.wins += numMatch(season.wins);
+      acc.draws += numMatch(season.draws);
+      acc.losses += numMatch(season.losses);
+      return acc;
+    },
+    { played: 0, goals: 0, wins: 0, draws: 0, losses: 0 }
+  );
+}
+
+function careerKpiHTML(person) {
+  const t = person.askf?.totals || {};
+  const askfPlayed = numMatch(t.played);
+  const askfGoals = numMatch(t.goals);
   const yellow = numMatch(t.yellow);
   const red = numMatch(t.red);
+  const tff = tffSeasonTotals(person);
+  const played = askfPlayed + tff.played;
+  const goals = askfGoals + tff.goals;
   if (!played && !goals && !yellow && !red) return "";
   const gpg = played && goals ? (goals / played).toFixed(2) : "";
+  const matchHint = tff.played
+    ? `ASKF ${askfPlayed} · TFF resmi ${tff.played}`
+    : "ASKF kariyer toplamı";
+  const goalHint = tff.goals
+    ? `ASKF ${askfGoals} · TFF ${tff.goals}`
+    : gpg
+      ? `Maç başına ${gpg}`
+      : "Kariyer golleri";
   const cards = [
     {
       kind: "matches",
       label: "Maç",
-      value: String(t.played ?? played),
-      hint: "ASKF kariyer toplamı",
+      value: String(played),
+      hint: matchHint,
       featured: true
     },
     {
       kind: "goals",
       label: "Gol",
-      value: String(t.goals ?? goals),
-      hint: gpg ? `Maç başına ${gpg}` : "Kariyer golleri",
+      value: String(goals),
+      hint: goalHint,
       featured: true
     },
     {
       kind: "yellow",
       label: "Sarı kart",
       value: String(t.yellow ?? yellow),
-      hint: yellow ? "Lig disiplini" : "Temiz kayıt"
+      hint: yellow ? "Lig disiplini (ASKF)" : "Temiz kayıt"
     },
     {
       kind: "red",
@@ -1600,7 +1625,7 @@ function askfBlockHTML(person) {
   if (!hasAskf && !hasSeasons) return "";
   return `<section class="group askf-block stats-dashboard">
     ${url ? `<p class="stats-source-link-row"><a class="stats-source-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Oyuncu profili</a></p>` : ""}
-    ${askfTotalsHTML(askf)}
+    ${careerKpiHTML(person)}
     ${profileFactsStripHTML(person)}
     <nav class="stats-jump" aria-label="İstatistik bölümleri">
       <a href="#askf-sezonlar">Sezonlar</a>
