@@ -5,7 +5,17 @@ const CHAPTERS = [
   { id: "futbolcu", index: "02", title: "Futbolcu", kicker: "Sahada", line: "Numara, mevki, oyun fikri." },
   { id: "istatistikler", index: "03", title: "İstatistikler", kicker: "Rakamlar", line: "Sezon, maç ve sahaya yansıyan sayılar." },
   { id: "elci", index: "04", title: "Elçi", kicker: "Duruş", line: "Oyunun içinde nasıl durduğu." },
-  { id: "projeler", index: "05", title: "Galeri", kicker: "Maç arşivi", line: "Maçlardan fotoğraf ve video." }
+  { id: "projeler", index: "05", title: "Galeri", kicker: "Maç arşivi", line: "Maçlardan fotoğraf ve video." },
+  { id: "iletisim", index: "06", title: "İletişim", kicker: "Hat", line: "Aile iletişimi ve doğrudan ulaşım." },
+  { id: "form", index: "07", title: "Form", kicker: "Yaz", line: "Mesajınız e-posta ile iletilir." }
+];
+
+const CONTACT_TOPICS = [
+  { id: "genel", label: "Genel" },
+  { id: "antrenman", label: "Antrenman" },
+  { id: "mac", label: "Maç / yerleştirme" },
+  { id: "basin", label: "Basın & medya" },
+  { id: "diger", label: "Diğer" }
 ];
 
 const SPOTS = [
@@ -160,6 +170,37 @@ function safeTffUrl(value) {
   }
 }
 
+function safeEmail(value) {
+  const raw = String(value ?? "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) return "";
+  return raw.slice(0, 120);
+}
+
+function contactInfo(person) {
+  const source = person?.contact && typeof person.contact === "object" ? person.contact : {};
+  const fallback = DEFAULT.contact || {};
+  const email = safeEmail(source.email) || safeEmail(fallback.email) || "a.kutluhan@msn.com";
+  const phoneDigits = String(source.phone || fallback.phone || "05546902543").replace(/\D/g, "");
+  const phoneDisplay = cleanLine(source.phoneDisplay || fallback.phoneDisplay || "0554 690 25 43", 24);
+  return {
+    relation: cleanLine(source.relation || fallback.relation, 32, "Babası"),
+    name: cleanLine(source.name || fallback.name, 80, "Kutluhan AKINCI"),
+    phone: phoneDigits,
+    phoneDisplay,
+    email,
+    note: cleanBlock(source.note || fallback.note, 600),
+    formIntro: cleanBlock(source.formIntro || fallback.formIntro, 800)
+  };
+}
+
+function phoneTel(digits) {
+  const d = String(digits || "").replace(/\D/g, "");
+  if (!d) return "";
+  if (d.length === 10 && d.startsWith("5")) return `+90${d}`;
+  if (d.startsWith("0")) return `+90${d.slice(1)}`;
+  return `+${d}`;
+}
+
 function safeSocialUrl(value, kind) {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
@@ -252,7 +293,7 @@ function chapterPhoto(person, id) {
   const photos = person.photos || [];
   const hit = photos.find((photo) => photo.chapter === id);
   if (hit) return hit;
-  const index = { kisi: 0, futbolcu: 1, istatistikler: 2, kupalar: 2, elci: 3, projeler: 4 }[id];
+  const index = { kisi: 0, futbolcu: 1, istatistikler: 2, kupalar: 2, elci: 3, projeler: 4, iletisim: 5, form: 5 }[id];
   if (index !== undefined && photos[index]) return photos[index];
   return null;
 }
@@ -905,7 +946,20 @@ function sanitize(data, useFallback = true) {
     honours: cleanList(source.honours, ["year", "title", "detail"], { year: 12, title: 60, detail: 180 }),
     values: cleanList(source.values, ["title", "text"], { title: 40, text: 240 }),
     dreams: cleanList(source.dreams, ["title", "text"], { title: 40, text: 240 }),
-    gallery: mergeGallery(cleanGallery(source.gallery, useFallback))
+    gallery: mergeGallery(cleanGallery(source.gallery, useFallback)),
+    contact: (() => {
+      const src = source.contact && typeof source.contact === "object" ? source.contact : {};
+      const fb = useFallback ? DEFAULT.contact || {} : {};
+      return {
+        relation: cleanLine(src.relation, 32, fb.relation || ""),
+        name: cleanLine(src.name, 80, fb.name || ""),
+        phone: String(src.phone || fb.phone || "").replace(/\D/g, "").slice(0, 15),
+        phoneDisplay: cleanLine(src.phoneDisplay, 24, fb.phoneDisplay || ""),
+        email: safeEmail(src.email) || (useFallback ? safeEmail(fb.email) : ""),
+        note: cleanBlock(src.note, 600, useFallback ? fb.note || "" : ""),
+        formIntro: cleanBlock(src.formIntro, 800, useFallback ? fb.formIntro || "" : "")
+      };
+    })()
   };
 }
 
@@ -1135,7 +1189,7 @@ function homeHTML() {
   return `<h1 class="sr-only">${esc(fullName(profile))}</h1>
     <div class="bg-stack" aria-hidden="true">${backgrounds}</div>
     <div class="home-shell">
-      <div class="home-grid secc_5">${areas}</div>
+      <div class="home-grid">${areas}</div>
     </div>
     <footer class="home-footer">
       <span>${esc(fullName(profile))}</span>
@@ -2774,12 +2828,220 @@ async function removeGalleryItem(id) {
   syncChrome();
 }
 
+function contactCard(label, valueHtml, extraClass = "") {
+  return `<div class="contact-card ${extraClass}">
+    <span class="contact-card-label">${esc(label)}</span>
+    <div class="contact-card-value">${valueHtml}</div>
+  </div>`;
+}
+
+function renderIletisim() {
+  const c = contactInfo(profile);
+  const tel = phoneTel(c.phone);
+  return chapterFrame(
+    CHAPTERS[5],
+    `
+    <p class="lede contact-lede">${esc(c.note || "Antrenman, maç ve saha ile ilgili görüşmeler için iletişim.")}</p>
+    <div class="contact-hub" role="list">
+      ${contactCard(
+        c.relation,
+        `<strong class="contact-person">${esc(c.name)}</strong>`,
+        "contact-card-primary"
+      )}
+      ${contactCard(
+        "Telefon",
+        tel
+          ? `<a class="contact-link contact-phone" href="tel:${esc(tel)}">${esc(c.phoneDisplay)}</a>`
+          : `<span>${esc(c.phoneDisplay)}</span>`
+      )}
+      ${contactCard(
+        "E-posta",
+        `<a class="contact-link contact-mail" href="mailto:${esc(c.email)}">${esc(c.email)}</a>`
+      )}
+    </div>
+  <aside class="contact-aside">
+    <p class="match-note">Arama ve e-posta bağlantıları mobilde tek dokunuşla açılır. Yazılı mesaj için <a href="#form">Form</a> bölümünü kullanabilirsiniz.</p>
+    <div class="contact-actions">
+    <a class="contact-action primary" href="tel:${esc(tel)}">Ara</a>
+    <a class="contact-action" href="mailto:${esc(c.email)}">E-posta</a>
+    <a class="contact-action" href="#form">Formu aç</a>
+    </div>
+  </aside>
+    `,
+    "article-contact"
+  );
+}
+
+function renderForm() {
+  const c = contactInfo(profile);
+  const topics = CONTACT_TOPICS.map(
+    (topic) => `<option value="${esc(topic.id)}">${esc(topic.label)}</option>`
+  ).join("");
+  return chapterFrame(
+    CHAPTERS[6],
+    `
+    <p class="lede contact-lede">${esc(c.formIntro || "Mesajınız doğrudan e-posta olarak iletilir.")}</p>
+    <p class="match-note contact-recipient">Alıcı: <a href="mailto:${esc(c.email)}">${esc(c.email)}</a></p>
+    <form id="saha-contact-form" class="contact-form" novalidate>
+      <div class="contact-form-row contact-form-row-2">
+        <label class="field" for="contact-name"><span>Adınız soyadınız</span>
+          <input id="contact-name" name="name" type="text" autocomplete="name" required maxlength="80" placeholder="Örn. Ayşe Yılmaz"></label>
+        <label class="field" for="contact-email"><span>E-posta</span>
+          <input id="contact-email" name="email" type="email" autocomplete="email" required maxlength="120" placeholder="ornek@mail.com"></label>
+      </div>
+      <div class="contact-form-row contact-form-row-2">
+        <label class="field" for="contact-phone"><span>Telefon <em class="field-opt">(isteğe bağlı)</em></span>
+          <input id="contact-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="24" placeholder="05xx xxx xx xx"></label>
+        <label class="field" for="contact-topic"><span>Konu</span>
+          <select id="contact-topic" name="topic" required>${topics}</select></label>
+      </div>
+      <label class="field wide" for="contact-subject"><span>Başlık</span>
+        <input id="contact-subject" name="subject" type="text" maxlength="120" placeholder="Kısa başlık"></label>
+      <label class="field wide" for="contact-message"><span>Mesajınız</span>
+        <textarea id="contact-message" name="message" required maxlength="4000" rows="7" placeholder="Mesajınızı yazın…"></textarea>
+        <span class="contact-char" data-char-count aria-live="polite">0 / 4000</span></label>
+      <label class="field contact-consent wide">
+        <input type="checkbox" name="consent" value="1" required>
+        <span>İletişim bilgilerimin yalnızca bu başvuru için kullanılmasına izin veriyorum.</span>
+      </label>
+      <label class="contact-hp" aria-hidden="true">
+        <span>Web sitesi</span>
+        <input type="text" name="website" tabindex="-1" autocomplete="off">
+      </label>
+      <p class="form-error contact-form-error" id="contact-form-error" role="alert" hidden></p>
+      <p class="contact-form-success" id="contact-form-success" role="status" hidden></p>
+      <div class="contact-form-actions">
+        <button type="submit" class="primary contact-submit" id="contact-submit">Gönder</button>
+        <a class="contact-action" href="#iletisim">İletişim bilgileri</a>
+      </div>
+    </form>
+    `,
+    "article-contact-form"
+  );
+}
+
+function contactFormError(code) {
+  const map = {
+    name: "Lütfen adınızı yazın (en az 2 karakter).",
+    email: "Geçerli bir e-posta adresi girin.",
+    phone: "Telefon formatı tanınmadı.",
+    message: "Mesaj en az 12 karakter olmalı.",
+    consent: "Devam etmek için onay kutusunu işaretleyin.",
+    rate: "Çok fazla deneme. Lütfen bir süre sonra tekrar deneyin.",
+    origin: "İstek kaynağı doğrulanamadı.",
+    body: "Mesaj çok uzun veya boş.",
+    json: "Gönderim okunamadı. Sayfayı yenileyip tekrar deneyin.",
+    network: "Bağlantı kurulamadı. İnternetinizi kontrol edin veya İletişim bölümünden doğrudan arayın."
+  };
+  return map[code] || "Gönderim tamamlanamadı. İletişim bölümünden e-posta veya telefon kullanabilirsiniz.";
+}
+
+async function submitContactForm(form) {
+  const errorEl = document.getElementById("contact-form-error");
+  const okEl = document.getElementById("contact-form-success");
+  const btn = document.getElementById("contact-submit");
+  const setError = (text) => {
+    if (!errorEl) return;
+    errorEl.hidden = !text;
+    errorEl.textContent = text || "";
+  };
+  const setSuccess = (text) => {
+    if (!okEl) return;
+    okEl.hidden = !text;
+    okEl.textContent = text || "";
+  };
+  setError("");
+  setSuccess("");
+  const fd = new FormData(form);
+  const topicOpt = CONTACT_TOPICS.find((t) => t.id === String(fd.get("topic") || ""));
+  const subjectRaw = String(fd.get("subject") || "").trim();
+  const subject = subjectRaw || (topicOpt ? topicOpt.label : "İletişim");
+  const payload = {
+    name: String(fd.get("name") || "").trim(),
+    email: String(fd.get("email") || "").trim(),
+    phone: String(fd.get("phone") || "").trim(),
+    subject,
+    topic: topicOpt?.label || String(fd.get("topic") || ""),
+    message: String(fd.get("message") || "").trim(),
+    consent: fd.get("consent") === "1",
+    website: String(fd.get("website") || "").trim()
+  };
+  if (payload.name.length < 2) {
+    setError(contactFormError("name"));
+    form.querySelector("#contact-name")?.focus();
+    return;
+  }
+  if (!safeEmail(payload.email)) {
+    setError(contactFormError("email"));
+    form.querySelector("#contact-email")?.focus();
+    return;
+  }
+  if (payload.message.length < 12) {
+    setError(contactFormError("message"));
+    form.querySelector("#contact-message")?.focus();
+    return;
+  }
+  if (!payload.consent) {
+    setError(contactFormError("consent"));
+    return;
+  }
+  if (!window.SahaContact?.submit) {
+    setError(contactFormError("network"));
+    return;
+  }
+  btn?.setAttribute("disabled", "disabled");
+  btn?.classList.add("is-busy");
+  const { status, data } = await window.SahaContact.submit(payload);
+  btn?.removeAttribute("disabled");
+  btn?.classList.remove("is-busy");
+  if (status === 429) {
+    setError(contactFormError("rate"));
+    return;
+  }
+  if (!data?.ok) {
+    setError(contactFormError(data?.error || "network"));
+    return;
+  }
+  const delivered = Boolean(data.delivered);
+  setSuccess(
+    delivered
+      ? "Mesajınız e-posta olarak iletildi. Teşekkürler — en kısa sürede dönüş yapılacaktır."
+      : "Mesajınız güvenle kaydedildi. E-posta iletisinin tamamlanması için sunucu posta ayarı yapılandırılıyor; acil durumlarda İletişim bölümünden doğrudan arayabilirsiniz."
+  );
+  form.reset();
+  bindContactForm();
+}
+
+function bindContactForm() {
+  const form = document.getElementById("saha-contact-form");
+  if (!form || form.dataset.bound === "1") return;
+  form.dataset.bound = "1";
+  const message = form.querySelector("#contact-message");
+  const counter = form.querySelector("[data-char-count]");
+  const syncCount = () => {
+    if (!message || !counter) return;
+    const n = message.value.length;
+    counter.textContent = `${n} / 4000`;
+  };
+  message?.addEventListener("input", syncCount);
+  syncCount();
+  const topic = form.querySelector("#contact-topic");
+  const subject = form.querySelector("#contact-subject");
+  topic?.addEventListener("change", () => {
+    if (subject && !subject.value.trim() && topic.selectedOptions[0]) {
+      subject.placeholder = `${topic.selectedOptions[0].textContent} — kısa başlık`;
+    }
+  });
+}
+
 const PAGES = {
   kisi: renderKisi,
   futbolcu: renderFutbolcu,
   istatistikler: renderIstatistikler,
   elci: renderElci,
-  projeler: renderProjeler
+  projeler: renderProjeler,
+  iletisim: renderIletisim,
+  form: renderForm
 };
 
 function field(id, label, value, extra = "") {
@@ -2821,6 +3083,13 @@ function editorHTML() {
         ${field("f-idol", "Örnek aldığı oyuncu", profile.idol, "wide")}
         ${field("f-youtube", "YouTube", profile.youtube, "wide")}
         ${field("f-instagram", "Instagram", profile.instagram, "wide")}
+        ${field("f-contact-relation", "İletişim — yakınlık", profile.contact?.relation || "", "wide")}
+        ${field("f-contact-name", "İletişim — ad", profile.contact?.name || "")}
+        ${field("f-contact-phone", "İletişim — telefon (rakam)", profile.contact?.phone || "")}
+        ${field("f-contact-phone-display", "İletişim — telefon (görünen)", profile.contact?.phoneDisplay || "")}
+        ${field("f-contact-email", "İletişim — e-posta", profile.contact?.email || "", "wide")}
+        ${area("f-contact-note", "İletişim — kısa not", profile.contact?.note || "")}
+        ${area("f-contact-form-intro", "Form — giriş metni", profile.contact?.formIntro || "")}
         ${field("f-admin-pin", "Yönetim kodu (URL ?yonetim=)", profile.adminPin || DEFAULT.adminPin || "", "wide")}
       </div>
       <h2>TFF</h2>
@@ -2944,6 +3213,7 @@ function renderPage() {
   document.body.classList.toggle("gallery-lightbox-open", Boolean(galleryLightboxId));
   document.body.classList.toggle("is-admin", isAdmin());
   if (page === "projeler") void hydrateGallery();
+  if (page === "form") bindContactForm();
 }
 
 function syncChrome() {
@@ -2980,6 +3250,15 @@ function readForm(useFallback = false) {
     idol: value("f-idol"),
     youtube: value("f-youtube"),
     instagram: value("f-instagram"),
+    contact: {
+      relation: value("f-contact-relation"),
+      name: value("f-contact-name"),
+      phone: value("f-contact-phone"),
+      phoneDisplay: value("f-contact-phone-display"),
+      email: value("f-contact-email"),
+      note: value("f-contact-note"),
+      formIntro: value("f-contact-form-intro")
+    },
     adminPin: value("f-admin-pin"),
     tff: {
       profileUrl: value("f-tff-url"),
@@ -3180,6 +3459,11 @@ function switchStatsTab(tab) {
 }
 
 document.body.addEventListener("submit", (event) => {
+  if (event.target.id === "saha-contact-form") {
+    event.preventDefault();
+    void submitContactForm(event.target);
+    return;
+  }
   if (event.target.id !== "profile-form") return;
   event.preventDefault();
   saveForm();

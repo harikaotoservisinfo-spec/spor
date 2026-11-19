@@ -1,0 +1,15 @@
+[Unit]
+Description=Kuzey Akıncı iletişim formu API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/kuzeyakinci-contact
+ExecStart=/usr/bin/python3 /opt/kuzeyakinci-contact/contact_server.py
+Restart=on-failure
+RestartSec=4
+Environment=CONTACT_ENV=/etc/kuzeyakinci/contact.env
+Environment=CONTACT_QUEUE=/var/log/kuzeyakinci/contact-queue.jsonl
+
+[Install]
+WantedBy=multi-user.target
