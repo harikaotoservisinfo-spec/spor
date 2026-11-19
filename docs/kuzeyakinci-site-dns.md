@@ -6,9 +6,12 @@ Site dosyaları `site/` klasöründedir. `main` branch’e push edildiğinde Git
 
 1. Repo: https://github.com/harikaotoservisinfo-spec/spor  
 2. **Settings → Pages**  
-   - **Build and deployment → Source:** `GitHub Actions`  
-3. Bu PR merge edildikten sonra **Settings → Pages → Custom domain** alanına: `kuzeyakinci.site`  
+   - **Build and deployment → Source:** `Deploy from a branch`  
+   - **Branch:** `gh-pages` → klasör `/ (root)` → **Save**  
+3. **Custom domain:** `kuzeyakinci.site`  
 4. DNS yayıldıktan sonra **Enforce HTTPS**’i açın.
+
+İlk deploy merge sonrası otomatik çalışır; başarısızsa **Actions → Publish kuzeyakinci.site → Run workflow** ile yeniden çalıştırın.
 
 ## 2. isimtescil.net DNS (5781862 — kuzeyakinci.site)
 
