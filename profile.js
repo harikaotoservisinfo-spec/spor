@@ -38,6 +38,12 @@ window.SAHA_DEFAULT = {
       caption: "Sahada"
     },
     {
+      file: "photos/kuzey-istatistik-kutlama.jpg",
+      chapter: "istatistikler",
+      alt: "Kutlama — 7 numara",
+      caption: "Maç sonrası"
+    },
+    {
       file: "photos/kuzey-kupalar.jpg",
       chapter: "istatistikler",
       alt: "Kuzey Akıncı, sarı-siyah formayla topun üzerinde",

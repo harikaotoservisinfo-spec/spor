@@ -2423,8 +2423,15 @@ function profileFactsStripHTML(person) {
   </div>`;
 }
 
+function statsHeroPhoto(person) {
+  return (
+    (person.photos || []).find((p) => p.file === "photos/kuzey-istatistik-kutlama.jpg")
+    || chapterPhoto(person, "istatistikler")
+  );
+}
+
 function renderIstatistikler() {
-  const visual = chapterPhoto(profile, "istatistikler");
+  const visual = statsHeroPhoto(profile);
   const heroBand = visual
     ? `<div class="persona-hero persona-hero-cup" style="--persona-hero:url('${esc(visual.file)}')" role="img" aria-label="${esc(visual.alt)}"></div>`
     : "";
