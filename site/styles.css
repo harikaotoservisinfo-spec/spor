@@ -1778,8 +1778,20 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   font-variant-numeric: tabular-nums;
 }
 
+.match-teams .club-us,
 .match-teams .is-us {
-  font-weight: 600;
+  color: var(--lime);
+  font-weight: 700;
+}
+
+.match-teams .club-opponent {
+  color: color-mix(in srgb, var(--muted) 88%, var(--ink));
+  font-weight: 500;
+}
+
+.match-teams .match-dash {
+  color: color-mix(in srgb, var(--muted) 70%, transparent);
+  font-weight: 500;
 }
 
 .score-link {

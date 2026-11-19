@@ -731,6 +731,22 @@ function shortClubName(name) {
   return text.length > 42 ? `${text.slice(0, 39)}…` : text;
 }
 
+function clubNameHTML(name) {
+  const short = shortClubName(name);
+  const cls = clubIsCisem(name) ? "club-us" : "club-opponent";
+  return `<span class="${cls}">${esc(short)}</span>`;
+}
+
+function formatMatchupHTML(matchup) {
+  const raw = String(matchup || "").trim();
+  if (!raw) return "—";
+  const parts = raw.split(/\s*[–\-]\s*/).map((s) => s.trim()).filter(Boolean);
+  if (parts.length === 2) {
+    return `${clubNameHTML(parts[0])}<span class="match-dash"> – </span>${clubNameHTML(parts[1])}`;
+  }
+  return esc(shortClubName(raw));
+}
+
 function cleanList(list, keys, limits, max = 12) {
   if (!Array.isArray(list)) return [];
   return list.slice(0, max).map((item) => {
@@ -1280,9 +1296,9 @@ function matchesTableHTML(matches, seasonId, person, opts = {}) {
     const role = cleanMatchRole(match.role);
     return `<tr>
       <td class="match-when">${macUrl ? `<a href="${esc(macUrl)}" target="_blank" rel="noopener noreferrer">${esc(when)}</a>` : esc(when)}</td>
-      <td class="match-teams"><span class="${clubIsCisem(match.home) ? "is-us" : ""}">${esc(shortClubName(match.home))}</span>
+      <td class="match-teams">${clubNameHTML(match.home)}
         <span class="match-score">${scoreCell}</span>
-        <span class="${clubIsCisem(match.away) ? "is-us" : ""}">${esc(shortClubName(match.away))}</span></td>
+        ${clubNameHTML(match.away)}</td>
       <td class="match-play" title="Kadro">${esc(roleLabel(role))}</td>
       <td class="match-play">${formatMinuteMark(match.subIn)}</td>
       <td class="match-play">${formatMinuteMark(match.subOut)}</td>
@@ -1483,7 +1499,7 @@ function askfSeasonMatchRows(matches, person) {
     const goals = numMatch(match.goals);
     return `<tr>
       <td class="match-when">${esc(match.date)}</td>
-      <td class="match-teams">${esc(match.matchup)}</td>
+      <td class="match-teams">${formatMatchupHTML(match.matchup)}</td>
       <td class="match-play match-score-col"><strong>${esc(match.score)}</strong></td>
       <td class="match-play">${esc(role)}</td>
       <td class="match-play">${formatMinuteMark(match.subIn)}</td>
@@ -1505,7 +1521,7 @@ function askfSeasonGoalRows(goals) {
   if (!goals.length) return `<p class="empty season-empty">Bu sezonda gol kaydı yok.</p>`;
   const body = goals.map((goal) => `<tr>
     <td class="match-when">${esc(goal.date)}</td>
-    <td class="match-teams">${esc(goal.matchup)}</td>
+    <td class="match-teams">${formatMatchupHTML(goal.matchup)}</td>
     <td class="match-play match-score-col"><strong>${esc(goal.score)}</strong></td>
     <td class="match-play"><strong>${esc(goal.minute)}'</strong></td>
   </tr>`).join("");
@@ -1519,7 +1535,7 @@ function askfSeasonCardRows(cards) {
     const klass = type.includes("kırmızı") || type.includes("kirmizi") ? "card-red" : "card-yellow";
     return `<tr>
       <td class="match-when">${esc(card.date)}</td>
-      <td class="match-teams">${esc(card.matchup)}</td>
+      <td class="match-teams">${formatMatchupHTML(card.matchup)}</td>
       <td class="match-play match-score-col"><strong>${esc(card.score)}</strong></td>
       <td class="match-play"><span class="card-pill ${klass}">${esc(card.card || "Kart")}</span></td>
       <td class="match-play">${esc(card.minute)}'</td>
