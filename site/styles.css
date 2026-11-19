@@ -4,6 +4,10 @@
   --muted: #b7c2b4;
   --ice: #d5e4ff;
   --lime: #e5ff63;
+  --match-win: #5ecf7a;
+  --match-loss: #e87868;
+  --match-draw: #9eb0bc;
+  --match-xg: #8eb8dc;
   --line: rgba(244, 241, 232, 0.18);
   --sheet: #101814;
   --kit: #f3f1ea;
@@ -1522,8 +1526,113 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   text-align: center;
 }
 
-.match-score-col strong {
+.match-score-col strong,
+.match-score-badge {
   font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.match-score-split {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12rem;
+  padding: 0.08rem 0.42rem;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-score-split.result-win {
+  background: color-mix(in srgb, var(--match-win) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--match-win) 35%, transparent);
+}
+
+.match-score-split.result-loss {
+  background: color-mix(in srgb, var(--match-loss) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--match-loss) 32%, transparent);
+}
+
+.match-score-split.result-draw {
+  background: color-mix(in srgb, var(--match-draw) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--match-draw) 28%, transparent);
+}
+
+.match-teams .match-score-split {
+  margin: 0 0.25rem;
+}
+
+.score-us {
+  color: var(--lime);
+  font-weight: 800;
+}
+
+.score-them {
+  color: color-mix(in srgb, var(--muted) 75%, var(--ink));
+  font-weight: 600;
+}
+
+.match-score-split.result-win .score-us {
+  color: color-mix(in srgb, var(--lime) 92%, var(--match-win));
+}
+
+.match-score-split.result-loss .score-them {
+  color: color-mix(in srgb, var(--match-loss) 88%, white);
+  font-weight: 800;
+}
+
+.score-sep {
+  opacity: 0.45;
+  font-weight: 500;
+}
+
+.match-table tbody tr.match-row-win td {
+  background: color-mix(in srgb, var(--match-win) 6%, transparent);
+}
+
+.match-table tbody tr.match-row-loss td {
+  background: color-mix(in srgb, var(--match-loss) 5.5%, transparent);
+}
+
+.match-table tbody tr.match-row-draw td {
+  background: color-mix(in srgb, var(--match-draw) 5%, transparent);
+}
+
+.match-val-muted {
+  opacity: 0.55;
+}
+
+.match-role-start {
+  color: color-mix(in srgb, var(--ice) 92%, white);
+  font-weight: 600;
+}
+
+.match-role-sub {
+  color: #d4b85c;
+  font-weight: 600;
+}
+
+.match-goals-scored {
+  color: var(--lime);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-goal-minute {
+  color: var(--lime);
+  font-weight: 700;
+}
+
+.match-min-val strong {
+  color: color-mix(in srgb, var(--ice) 95%, white);
+}
+
+.match-xg-val {
+  color: var(--match-xg);
+  font-variant-numeric: tabular-nums;
+}
+
+.match-result-col {
+  width: 2.1rem;
+  text-align: center;
 }
 
 .card-pill {
@@ -1813,22 +1922,30 @@ body.is-home.scene-kisi .hint { opacity: 1; }
 }
 
 .match-result {
+  display: inline-block;
+  min-width: 1.35rem;
   width: 2rem;
+  padding: 0.12rem 0.28rem;
+  border-radius: 5px;
+  line-height: 1.2;
   text-align: center;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .match-result.result-win {
-  color: #3d8f5a;
+  color: color-mix(in srgb, var(--match-win) 92%, #0d1a12);
+  background: color-mix(in srgb, var(--match-win) 22%, transparent);
 }
 
 .match-result.result-draw {
-  opacity: 0.75;
+  color: color-mix(in srgb, var(--match-draw) 95%, #14181c);
+  background: color-mix(in srgb, var(--match-draw) 16%, transparent);
 }
 
 .match-result.result-loss {
-  color: #c45c4a;
+  color: color-mix(in srgb, var(--match-loss) 90%, #1a100e);
+  background: color-mix(in srgb, var(--match-loss) 20%, transparent);
 }
 
 .match-note {
