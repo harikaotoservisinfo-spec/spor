@@ -29,6 +29,12 @@ window.SAHA_DEFAULT = {
       caption: "Sahada"
     },
     {
+      file: "photos/kuzey-kupalar.jpg",
+      chapter: "kupalar",
+      alt: "Kuzey Akıncı, sarı-siyah formayla topun üzerinde",
+      caption: "Forma günü"
+    },
+    {
       file: "photos/kuzey-projeler.jpg",
       chapter: "projeler",
       alt: "Kuzey Akıncı, tribünde mavi forma ile",

@@ -86,6 +86,7 @@ function cleanPhotos(list, max = 24) {
       if (file.includes("portre")) chapter = "kisi";
       else if (file.includes("futbolcu")) chapter = "futbolcu";
       else if (file.includes("projeler")) chapter = "projeler";
+      else if (file.includes("kupalar")) chapter = "kupalar";
       else chapter = "";
     }
     return {
@@ -521,6 +522,8 @@ function renderFutbolcu() {
 }
 
 function renderKupalar() {
+  const trophy = chapterPhoto(profile, "kupalar");
+  const lead = trophy ? `<div class="article-photo">${photoFigure(trophy, "portrait hero cup-shot")}</div>` : "";
   const body = profile.honours.length
     ? `<div class="cups">${profile.honours.map((honour) => `<article class="cup">
         ${cupSVG()}
@@ -533,7 +536,7 @@ function renderKupalar() {
         <p class="lede">Kupa, madalya ya da bir teşekkür. İlki asılınca duvar dolmaya başlar.</p>
         <p><button type="button" class="textbtn" data-action="edit" data-focus="add-honours">Kupa ekle</button></p>
       </div>`;
-  return chapterFrame(CHAPTERS[2], body);
+  return chapterFrame(CHAPTERS[2], `${lead}${body}`);
 }
 
 function renderElci() {
