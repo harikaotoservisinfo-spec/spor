@@ -388,7 +388,7 @@ function matchLength(person) {
 /** TFF amatör / gelişim — tam maç süresi (dk), kaynak: TFF yaş lig esasları */
 const YOUTH_FULL_MATCH_MINUTES = {
   11: 40,
-  12: 60,
+  12: 50,
   13: 60,
   14: 70,
   15: 70,
@@ -410,7 +410,6 @@ function matchLengthForMatch(match, person) {
   const age = youthAgeFromCompetition(comp);
   if (!age) return matchLength(person);
   const gelisim = /GELİŞİM|GELISIM/.test(String(comp).toLocaleUpperCase("tr"));
-  if (age === 12 && /ŞENLİK|MİNİK|MINIK/.test(String(comp).toLocaleUpperCase("tr"))) return 50;
   if (gelisim) {
     if (age === 14) return 70;
     if (age === 15 || age === 16) return 80;
@@ -1487,7 +1486,7 @@ function askfSeasonCardBody(askf, season, competition, person) {
   const playtime = playingTimeStatsGridHTML(agg, { goalLabel: "Maç golleri" });
   return `${playtime ? `<div class="season-subblock">
       <h3 class="season-subtitle">Oynama süresi</h3>
-      <p class="match-note season-inline-note">Süre: TFF yaş lig tablosu (U12 2×30, U13 2×30, U14/U15 2×35, U16 2×40, U17 2×45 dk). ASKF’de 90 dk yazılan tam maçlar buna göre düzeltilir.</p>
+      <p class="match-note season-inline-note">Süre: TFF yaş lig tablosu (U12 2×25, U13 2×30, U14/U15 2×35, U16 2×40, U17 2×45 dk). ASKF’de 90 dk yazılan tam maçlar buna göre düzeltilir.</p>
       ${playtime}
     </div>` : ""}
     <div class="season-subblock">
