@@ -1729,7 +1729,7 @@ function seasonCardsHTML(person) {
   }).join("");
   return `<section class="group stats-panel" id="askf-sezonlar">
     <div class="stats-section-head">
-      <h2 class="stats-section-title">İstatistik</h2>
+      <h2 class="sr-only">Sezonlar ve grafikler</h2>
       <div class="stats-tabs" role="tablist" aria-label="Sezon ve grafik">
         <button type="button" role="tab" class="stats-tab is-active" data-action="stats-tab" data-tab="sezonlar" aria-selected="true" aria-controls="stats-sezonlar-panel">Sezonlar</button>
         <button type="button" role="tab" class="stats-tab" data-action="stats-tab" data-tab="grafikler" aria-selected="false" aria-controls="stats-grafikler">Grafikler</button>
