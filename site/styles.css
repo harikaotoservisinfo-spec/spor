@@ -1366,6 +1366,59 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   }
 }
 
+.season-card-tff {
+  border-color: color-mix(in srgb, var(--lime) 12%, transparent);
+}
+
+.season-source-pill {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.08rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  vertical-align: middle;
+  border: 1px solid color-mix(in srgb, var(--lime) 45%, transparent);
+  opacity: 0.88;
+}
+
+.season-playtime-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+}
+
+.season-playtime-grid .stat {
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, var(--sheet) 70%, transparent);
+}
+
+.season-playtime-grid .stat span {
+  font-size: 0.68rem;
+  opacity: 0.72;
+}
+
+.season-playtime-grid .stat strong {
+  font-size: 0.9rem;
+}
+
+.season-inline-note {
+  margin: 0 0 0.45rem;
+  font-size: 0.78rem;
+}
+
+.season-source-link {
+  margin: 0.75rem 0 0;
+}
+
+.match-table-tff {
+  min-width: 36rem;
+}
+
 .match-table th,
 .match-table td {
   text-align: left;
