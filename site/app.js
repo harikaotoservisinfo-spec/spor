@@ -290,6 +290,27 @@ function mergeGameStats(list) {
   return merged;
 }
 
+function cleanAskf(source, useFallback) {
+  const base = DEFAULT.askf && typeof DEFAULT.askf === "object" ? DEFAULT.askf : {};
+  const raw = source?.askf && typeof source.askf === "object" ? source.askf : {};
+  const pick = (key, max) => cleanLine(raw[key] ?? base[key], max, useFallback ? String(base[key] || "") : "");
+  const totals = { played: 0, goals: 0, yellow: 0, red: 0, ...(base.totals || {}), ...(raw.totals || {}) };
+  const mergeList = (user, def, max = 500) => {
+    const list = Array.isArray(user) && user.length ? user : def;
+    return Array.isArray(list) ? list.slice(0, max) : [];
+  };
+  return {
+    profileUrl: cleanLine(raw.profileUrl, 120, useFallback ? base.profileUrl || "" : "") || "https://antalyaaskf.org/bilgi-bankasi/oyuncu-bilgisi/2049878/kuzey-akinci",
+    oyid: pick("oyid", 12),
+    licenseNo: pick("licenseNo", 16),
+    totals,
+    career: mergeList(raw.career, base.career, 24),
+    matches: mergeList(raw.matches, base.matches, 120),
+    goals: mergeList(raw.goals, base.goals, 120),
+    cards: mergeList(raw.cards, base.cards, 24)
+  };
+}
+
 function cleanTff(source, useFallback) {
   const base = DEFAULT.tff || {};
   const raw = source?.tff && typeof source.tff === "object" ? source.tff : source;
@@ -624,6 +645,7 @@ function sanitize(data, useFallback = true) {
     futbolBlocks: mergeStoryBlocks(cleanPersonaBlocks(source.futbolBlocks), "futbolBlocks"),
     facts: mergeFacts(cleanList(source.facts, ["label", "value"], { label: 40, value: 80 })),
     stats: mergeStats(cleanList(source.stats, ["label", "value"], { label: 40, value: 80 })),
+    askf: cleanAskf(source, useFallback),
     tff: cleanTff(source, useFallback),
     playModel: {
       xgPer90: cleanLine(source.playModel?.xgPer90, 8, useFallback ? DEFAULT.playModel?.xgPer90 || "0.30" : "0.30"),
@@ -1146,24 +1168,181 @@ function seasonsHTML(person) {
   </section>`).join("");
 }
 
+function askfTotalsHTML(askf) {
+  const t = askf.totals || {};
+  const chips = [
+    ["Maç", t.played],
+    ["Gol", t.goals],
+    ["Sarı", t.yellow],
+    ["Kırmızı", t.red]
+  ].filter(([, v]) => v !== undefined && v !== "");
+  return chips.length
+    ? `<div class="season-chips stats-hero-chips">${chips.map(([label, value]) => `<span class="season-chip stats-hero-chip"><em>${esc(label)}</em> ${esc(String(value))}</span>`).join("")}</div>`
+    : "";
+}
+
+function askfCareerTableHTML(askf) {
+  const rows = askf.career || [];
+  if (!rows.length) return "";
+  const body = rows.map((row) => `<tr>
+    <td class="career-league">${esc(row.league)}</td>
+    <td class="text-center">${esc(row.played)}</td>
+    <td class="text-center">${esc(row.subIn)}</td>
+    <td class="text-center">${esc(row.subOut)}</td>
+    <td class="text-center"><strong>${esc(row.goals)}</strong></td>
+    <td class="text-center">${esc(row.yellow)}</td>
+    <td class="text-center">${esc(row.red)}</td>
+  </tr>`).join("");
+  return `<section class="group stats-panel">
+    <h2>Kariyer</h2>
+    <p class="match-note">Antalya ASKF — sezon / lig bazında özet (Kariyer sekmesi).</p>
+    <div class="match-scroll">
+      <table class="match-table match-table-career">
+        <thead><tr>
+          <th>Sezon / Lig</th><th>Maç</th><th>Giriş</th><th>Çıkış</th><th>Gol</th><th>Sarı</th><th>Kırmızı</th>
+        </tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>
+  </section>`;
+}
+
+function askfSeasonOptions(matches) {
+  const seasons = [...new Set((matches || []).map((m) => m.season).filter(Boolean))];
+  seasons.sort((a, b) => b.localeCompare(a, "tr"));
+  return `<label class="stats-filter" for="askf-season-filter"><span>Sezon</span>
+    <select id="askf-season-filter" aria-label="Sezon filtresi">
+      <option value="">Tüm sezonlar</option>
+      ${seasons.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("")}
+    </select></label>`;
+}
+
+function askfMatchesTableHTML(askf) {
+  const rows = askf.matches || [];
+  if (!rows.length) return "";
+  const body = rows.map((match) => {
+    const role = match.role ? roleLabel(match.role) : "—";
+    const mins = match.minutes ? `${match.minutes}'` : "—";
+    const subIn = formatMinuteMark(match.subIn);
+    const subOut = formatMinuteMark(match.subOut);
+    return `<tr data-season="${esc(match.season)}">
+      <td class="match-when">${esc(match.date)}</td>
+      <td class="match-comp">${esc(match.competition)}</td>
+      <td class="match-teams">${esc(match.matchup)}</td>
+      <td class="match-play match-score-col"><strong>${esc(match.score)}</strong></td>
+      <td class="match-play">${esc(role)}</td>
+      <td class="match-play">${subIn}</td>
+      <td class="match-play">${subOut}</td>
+      <td class="match-play match-min"><strong>${mins}</strong></td>
+    </tr>`;
+  }).join("");
+  return `<section class="group stats-panel" id="askf-maclar">
+    <div class="panel-head">
+      <h2>Maçlar</h2>
+      ${askfSeasonOptions(rows)}
+    </div>
+    <p class="match-note">88 kayıt — skor, kadro (İlk 11 / Yedek), giriş ve çıkış dakikaları.</p>
+    <div class="match-scroll" tabindex="0">
+      <table class="match-table match-table-play" id="askf-matches-table">
+        <thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Skor</th><th>Kadro</th><th>Giriş</th><th>Çıkış</th><th>Dk</th></tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>
+  </section>`;
+}
+
+function askfGoalsTableHTML(askf) {
+  const rows = askf.goals || [];
+  if (!rows.length) return "";
+  const body = rows.map((goal) => `<tr data-season="${esc(goal.season)}">
+    <td class="match-when">${esc(goal.date)}</td>
+    <td class="match-comp">${esc(goal.competition)}</td>
+    <td class="match-teams">${esc(goal.matchup)}</td>
+    <td class="match-play match-score-col"><strong>${esc(goal.score)}</strong></td>
+    <td class="match-play"><strong>${esc(goal.minute)}'</strong></td>
+  </tr>`).join("");
+  return `<section class="group stats-panel" id="askf-goller">
+    <h2>Goller</h2>
+    <p class="match-note">70 gol — dakika ve maç skoru ile.</p>
+    <div class="match-scroll">
+      <table class="match-table"><thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Skor</th><th>Dk</th></tr></thead><tbody>${body}</tbody></table>
+    </div>
+  </section>`;
+}
+
+function askfCardsTableHTML(askf) {
+  const rows = askf.cards || [];
+  if (!rows.length) return `<section class="group stats-panel" id="askf-kartlar"><h2>Kartlar</h2><p class="empty">Kart kaydı yok.</p></section>`;
+  const body = rows.map((card) => {
+    const type = String(card.card || "").toLocaleLowerCase("tr");
+    const klass = type.includes("kırmızı") || type.includes("kirmizi") ? "card-red" : "card-yellow";
+    return `<tr><td class="match-when">${esc(card.date)}</td>
+      <td class="match-comp">${esc(card.competition)}</td>
+      <td class="match-teams">${esc(card.matchup)}</td>
+      <td class="match-play match-score-col"><strong>${esc(card.score)}</strong></td>
+      <td class="match-play"><span class="card-pill ${klass}">${esc(card.card || "Kart")}</span></td>
+      <td class="match-play">${esc(card.minute)}'</td></tr>`;
+  }).join("");
+  return `<section class="group stats-panel" id="askf-kartlar">
+    <h2>Kartlar</h2>
+    <div class="match-scroll"><table class="match-table"><thead><tr><th>Tarih</th><th>Lig</th><th>Maç</th><th>Skor</th><th>Kart</th><th>Dk</th></tr></thead><tbody>${body}</tbody></table></div>
+  </section>`;
+}
+
+function askfBlockHTML(person) {
+  const askf = person.askf || {};
+  const url = askf.profileUrl || "";
+  if (!askf.matches?.length && !askf.career?.length) return "";
+  return `<section class="group askf-block stats-dashboard">
+    <div class="stats-source-head">
+      <div>
+        <h2>Antalya ASKF</h2>
+        <p class="tff-lede">Kariyer, maç, gol ve kart — il resmi amatör veri bankası.</p>
+      </div>
+      ${url ? `<a class="stats-source-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Oyuncu profili</a>` : ""}
+    </div>
+    ${askfTotalsHTML(askf)}
+    <nav class="stats-jump" aria-label="İstatistik bölümleri">
+      <a href="#askf-maclar">Maçlar</a>
+      <a href="#askf-goller">Goller</a>
+      <a href="#askf-kartlar">Kartlar</a>
+      <a href="#tff-detay">TFF detay</a>
+    </nav>
+    ${askfCareerTableHTML(askf)}
+    ${askfMatchesTableHTML(askf)}
+    ${askfGoalsTableHTML(askf)}
+    ${askfCardsTableHTML(askf)}
+  </section>`;
+}
+
+function tffDetailSectionHTML(person) {
+  const hasTff = (person.matches || []).length || person.tff?.profileUrl;
+  if (!hasTff) return "";
+  return `<section class="group stats-panel tff-detail" id="tff-detay">
+    <h2>TFF resmi lig</h2>
+    <p class="match-note">U15 Gelişim Ligi — kadro dakikası, xG ve maç detay linkleri.</p>
+    ${tffBlockHTML(person)}
+    ${seasonsHTML(person)}
+  </section>`;
+}
+
+function filterAskfSeason(season) {
+  document.querySelectorAll("#askf-matches-table tbody tr, #askf-goller tbody tr").forEach((row) => {
+    row.hidden = !!(season && row.dataset.season !== season);
+  });
+}
+
 function renderIstatistikler() {
   const visual = chapterPhoto(profile, "istatistikler");
   const heroBand = visual
     ? `<div class="persona-hero persona-hero-cup" style="--persona-hero:url('${esc(visual.file)}')" role="img" aria-label="${esc(visual.alt)}"></div>`
     : "";
-  const table = profile.gameStats.length
-    ? `<div class="stats stats-wide">${profile.gameStats.map((stat) => `<div class="stat"><span>${esc(stat.label)}</span><strong>${esc(stat.value)}</strong></div>`).join("")}</div>`
-    : `<p class="empty">Maç ve sezon rakamları henüz yazılmadı.</p><p><button type="button" class="textbtn" data-action="edit" data-focus="add-game-stats">İstatistik ekle</button></p>`;
   return chapterFrame(CHAPTERS[2], `
     ${heroBand}
-    <div class="persona-sheet">
-      <p class="persona-lede">Topladığı, oynadığı ve ürettiği — sayıya dökülen kısım burası.</p>
-      ${tffBlockHTML(profile)}
-      <section class="group">
-        <h2>Özet</h2>
-        ${table}
-      </section>
-      ${seasonsHTML(profile)}
+    <div class="persona-sheet persona-stats">
+      <p class="persona-lede">ASKF kariyeri ve TFF resmi lig verisi — tek sayfada, doğrulanmış kaynaklarla.</p>
+      ${askfBlockHTML(profile)}
+      ${tffDetailSectionHTML(profile)}
       <section class="group">
         <h2>Profil kartları</h2>
         ${factsHTML(profile.stats)}
@@ -1566,6 +1745,8 @@ document.body.addEventListener("input", (event) => {
 document.body.addEventListener("change", (event) => {
   if (event.target.id === "import-file" && event.target.files?.[0]) {
     importProfile(event.target.files[0]);
+  } else if (event.target.id === "askf-season-filter") {
+    filterAskfSeason(event.target.value);
   }
 });
 

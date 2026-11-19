@@ -967,6 +967,126 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   margin-top: -0.25rem;
 }
 
+.article-stats .persona-sheet {
+  max-width: 56rem;
+}
+
+.stats-dashboard {
+  margin-bottom: 1.25rem;
+}
+
+.stats-source-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.stats-source-head h2 {
+  margin: 0 0 0.25rem;
+}
+
+.stats-source-link {
+  font-size: 0.85rem;
+  text-underline-offset: 0.2em;
+  white-space: nowrap;
+}
+
+.stats-hero-chips {
+  margin-bottom: 0.85rem;
+}
+
+.stats-hero-chip {
+  font-size: 0.88rem;
+  padding: 0.35rem 0.7rem;
+}
+
+.stats-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+}
+
+.stats-jump a {
+  opacity: 0.85;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.stats-panel {
+  margin-top: 1.15rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.stats-panel .panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.stats-panel .panel-head h2 {
+  margin: 0;
+}
+
+.stats-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+}
+
+.stats-filter select {
+  background: color-mix(in srgb, var(--sheet) 92%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 6px;
+  padding: 0.25rem 0.45rem;
+  color: inherit;
+  max-width: 12rem;
+}
+
+.match-table-career .career-league {
+  min-width: 14rem;
+  font-size: 0.8rem;
+}
+
+.match-table .text-center {
+  text-align: center;
+}
+
+.match-score-col strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.card-pill {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.card-yellow {
+  background: #e8c84a;
+  color: #1a1406;
+}
+
+.card-red {
+  background: #c54a4a;
+  color: #fff;
+}
+
+.tff-detail {
+  margin-top: 1.5rem;
+}
+
 .match-table th,
 .match-table td {
   text-align: left;

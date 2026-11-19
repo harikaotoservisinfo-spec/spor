@@ -88,6 +88,7 @@ window.SAHA_DEFAULT = {
       align: "right"
     }
   ],
+  askf: typeof window.SAHA_ASKF_2049878 !== "undefined" ? window.SAHA_ASKF_2049878 : {},
   tff: {
     profileUrl: "https://www.tff.org/Default.aspx?pageId=30&kisiID=2298896",
     kisiId: "2298896",
