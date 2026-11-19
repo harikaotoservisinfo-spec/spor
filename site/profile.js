@@ -18,7 +18,8 @@ window.SAHA_DEFAULT = {
   bio: "Formasını bilen çok kişi var; Kuzey'i tanıyan daha az. Kuzey Akıncı, Yusufeli, Artvin kökenli; Muratpaşa'da doğmuş, Antalya'da ailesiyle yaşayan ve öğrenimine burada devam eden bir genç. Bu sayfa skor tabelası değil — önce insanı, sonra futbolcuyu anlatır.",
   day: "Okul ve antrenman Antalya ritmiyle birleşir. Kısa bir gün bile planlıysa boşa gitmez.",
   loves: "Saha, video çekimi ve tekrarlayan antrenman saati.",
-  futbolIntro: "Futbola forvet olarak başladı. Çisem Spor'da yoluna devam ediyor; bugün sağ kanatta oynasa da forvet refleksi oyununun içinde duruyor.",
+  futbolIntro:
+    "Forvetten sağ kanada uzanan bir yol: hız, bitiricilik ve takım oyunu aynı oyuncuda. ASKF ve TFF kayıtları burada özetlenir; detaylı tablolar İstatistikler'de.",
   style: "Sprinter bir yapıya sahip: çok hızlı, ilk adımda fark yaratır. Doğal olarak solak; sahada ağırlığı sağ ayakta, sol ayağını da her antrenmanda güçlendirmeye devam ediyor. Her geçen gün kendini geliştirmeye devam ediyor.",
   kit: "#f3f1ea",
   kitInk: "#142018",
@@ -154,7 +155,7 @@ window.SAHA_DEFAULT = {
     },
     {
       title: "Hız ve gelişim",
-      text: "Kısa mesafede çok hızlı. Sprinter yapısı, topu kazandığı anda baskıyı geride bırakmasını sağlar. Hız tek başına yetmez diye öğreniyor; pas, orta ve son pasla birleşince tam silahına dönüşüyor. Her geçen gün üstüne koyuyor.",
+      text: "Kısa mesafede çok hızlı; sprinter profili rakamlarla da görünür: kariyerde yüksek gol/maç oranı, U17'de güçlü başlangıç. Hızı pas ve son vuruşla birleştirdikçe oyun üretimi artıyor — süre ve xG modeli İstatistikler'de takip ediliyor.",
       chapter: "istatistikler",
       align: "left"
     }

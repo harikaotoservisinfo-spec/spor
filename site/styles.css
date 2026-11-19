@@ -625,6 +625,269 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   max-width: 38rem;
 }
 
+.futbolcu-identity {
+  margin-top: 1.75rem;
+  padding: clamp(1rem, 2.5vw, 1.35rem);
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--lime) 22%, transparent);
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--lime) 12%, transparent), transparent 55%),
+    color-mix(in srgb, var(--sheet) 90%, transparent);
+}
+
+.futbolcu-id-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.futbolcu-shirt-num {
+  font-family: var(--serif);
+  font-size: clamp(3rem, 8vw, 4.5rem);
+  font-weight: 560;
+  line-height: 0.9;
+  color: var(--lime);
+  letter-spacing: -0.04em;
+}
+
+.futbolcu-id-role {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.futbolcu-id-motto {
+  margin: 0.35rem 0 0;
+  font-family: var(--serif);
+  font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+  font-weight: 560;
+  max-width: 22ch;
+  line-height: 1.1;
+}
+
+.futbolcu-traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+
+.futbolcu-trait {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid color-mix(in srgb, var(--lime) 28%, transparent);
+  background: color-mix(in srgb, var(--lime) 8%, transparent);
+}
+
+.futbolcu-career-pulse {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 1rem 0 0;
+}
+
+.futbolcu-career-pulse div {
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, black 22%, transparent);
+}
+
+.futbolcu-career-pulse dt {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+.futbolcu-career-pulse dd {
+  margin: 0.2rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.futbolcu-source {
+  margin: 0.65rem 0 0;
+  font-size: 0.82rem;
+}
+
+.futbolcu-source a {
+  color: var(--lime);
+}
+
+.futbolcu-snapshot,
+.futbolcu-ladder,
+.futbolcu-play-profile {
+  margin-top: 2.25rem;
+}
+
+.futbolcu-snapshot h2,
+.futbolcu-ladder h2,
+.futbolcu-play-profile h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--serif);
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+  font-weight: 560;
+}
+
+.futbolcu-season-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+
+.futbolcu-season-card {
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  background: color-mix(in srgb, var(--sheet) 88%, transparent);
+}
+
+.futbolcu-season-askf {
+  border-color: color-mix(in srgb, var(--lime) 30%, transparent);
+}
+
+.futbolcu-season-kicker {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.futbolcu-season-card h3 {
+  margin: 0.35rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.futbolcu-season-sub {
+  margin: 0.2rem 0 0.65rem;
+  font-size: 0.82rem;
+  opacity: 0.7;
+}
+
+.futbolcu-season-stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.futbolcu-season-stats li {
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, black 20%, transparent);
+  text-align: center;
+}
+
+.futbolcu-season-stats span {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+.futbolcu-season-stats strong {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.futbolcu-ladder-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  border-left: 2px solid color-mix(in srgb, var(--lime) 35%, transparent);
+}
+
+.futbolcu-ladder-item {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr auto;
+  gap: 0.65rem 1rem;
+  align-items: baseline;
+  padding: 0.55rem 0 0.55rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+  font-size: 0.88rem;
+}
+
+.futbolcu-ladder-item.is-current {
+  color: color-mix(in srgb, var(--lime) 92%, white);
+}
+
+.futbolcu-ladder-item.is-current .futbolcu-ladder-league {
+  font-weight: 600;
+}
+
+.futbolcu-ladder-season {
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+.futbolcu-ladder-pg {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.futbolcu-play-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.futbolcu-play-stat {
+  padding: 0.7rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, black 18%, transparent);
+}
+
+.futbolcu-play-stat span {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+.futbolcu-play-stat strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.08rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+  .futbolcu-career-pulse {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .futbolcu-season-grid,
+  .futbolcu-play-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .futbolcu-ladder-item {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}
+
 .lede, .prose p {
   font-weight: 300;
   font-size: 1.28rem;

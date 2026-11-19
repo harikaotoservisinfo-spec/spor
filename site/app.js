@@ -1567,6 +1567,153 @@ function renderKisi() {
   `, "article-persona");
 }
 
+function futbolcuCurrentLeagueAgg(person) {
+  const career = person.askf?.career || [];
+  if (!career.length) return null;
+  const row = career[0];
+  const { season, competition } = parseCareerLeague(row.league);
+  const askf = person.askf || {};
+  const matches = askfLeagueMatches(askf, season, competition);
+  const goalsList = askfLeagueGoals(askf, season, competition);
+  const agg = askfPlayingTimeAggregate(matches, goalsList.length, person);
+  return {
+    row,
+    season,
+    competition,
+    matchCount: matches.length,
+    agg,
+    played: numMatch(row.played),
+    goals: numMatch(row.goals),
+    yellow: numMatch(row.yellow),
+    red: numMatch(row.red)
+  };
+}
+
+function futbolcuIdentityHTML(person) {
+  const number = person.number || "—";
+  const motto = person.motto || "";
+  const traits = [];
+  const prof = (person.stats || []).find((s) => String(s.label || "").toLocaleLowerCase("tr") === "profil");
+  if (prof?.value) traits.push(prof.value);
+  if (person.position) traits.push(person.position);
+  if (person.naturalFoot) traits.push(`Doğal ${String(person.naturalFoot).toLocaleLowerCase("tr")}`);
+  if (person.foot && person.foot !== person.naturalFoot) traits.push(`Sahada ${String(person.foot).toLocaleLowerCase("tr")}`);
+  if (person.team) traits.push(person.team);
+  const t = person.askf?.totals || {};
+  const played = numMatch(t.played);
+  const goals = numMatch(t.goals);
+  const gpg = played ? (goals / played).toFixed(2) : "";
+  const license = person.tff?.licenseNo || person.askf?.licenseNo || "";
+  const askfUrl = safeAskfUrl(person.askf?.profileUrl);
+  return `<section class="futbolcu-identity" aria-label="Futbolcu kimliği">
+    <div class="futbolcu-id-head">
+      <span class="futbolcu-shirt-num" aria-label="Forma numarası">${esc(number)}</span>
+      <div class="futbolcu-id-copy">
+        <p class="futbolcu-id-role">${esc(person.position || "")}${person.team ? ` · ${esc(person.team)}` : ""}</p>
+        ${motto ? `<p class="futbolcu-id-motto">${esc(motto)}</p>` : ""}
+      </div>
+    </div>
+    ${traits.length ? `<div class="futbolcu-traits">${traits.map((trait) => `<span class="futbolcu-trait">${esc(trait)}</span>`).join("")}</div>` : ""}
+    <dl class="futbolcu-career-pulse">
+      <div><dt>Kariyer maç</dt><dd>${played || "—"}</dd></div>
+      <div><dt>Kariyer gol</dt><dd>${goals || "—"}</dd></div>
+      <div><dt>Gol / maç</dt><dd>${gpg || "—"}</dd></div>
+      <div><dt>Lisans</dt><dd>${esc(license || "—")}</dd></div>
+    </dl>
+    ${askfUrl ? `<p class="futbolcu-source"><a href="${esc(askfUrl)}" target="_blank" rel="noopener noreferrer">ASKF oyuncu profili</a></p>` : ""}
+  </section>`;
+}
+
+function futbolcuSeasonPanelHTML(person) {
+  const cur = futbolcuCurrentLeagueAgg(person);
+  const tffSeason = (person.seasons || []).find((s) => s.id === "2025-26") || person.seasons?.[0];
+  const tffAgg = tffSeason ? playingTimeAggregate(person.matches, tffSeason.id, person) : null;
+  if (!cur && !tffAgg) return "";
+  const blocks = [];
+  if (cur) {
+    const gpg = cur.played ? (cur.goals / cur.played).toFixed(2) : "—";
+    blocks.push(`<article class="futbolcu-season-card futbolcu-season-askf">
+      <p class="futbolcu-season-kicker">Güncel lig · ASKF</p>
+      <h3>${esc(cur.competition || cur.row.league)}</h3>
+      <p class="futbolcu-season-sub">${esc(cur.season)}</p>
+      <ul class="futbolcu-season-stats">
+        <li><span>Maç</span><strong>${cur.played || cur.matchCount}</strong></li>
+        <li><span>Gol</span><strong>${cur.goals}</strong></li>
+        <li><span>G / maç</span><strong>${gpg}</strong></li>
+        <li><span>Süre</span><strong>${esc(formatDurationTotal(cur.agg.totalMin))}</strong></li>
+        <li><span>İlk 11</span><strong>${cur.agg.starts}</strong></li>
+      </ul>
+    </article>`);
+  }
+  if (tffSeason && tffAgg) {
+    const rec = [tffSeason.wins, tffSeason.draws, tffSeason.losses].some((v) => numMatch(v) > 0)
+      ? `${numMatch(tffSeason.wins)}G · ${numMatch(tffSeason.draws)}B · ${numMatch(tffSeason.losses)}M`
+      : "—";
+    const gpg = tffAgg.appearances && tffAgg.goals ? (tffAgg.goals / tffAgg.appearances).toFixed(2) : "—";
+    blocks.push(`<article class="futbolcu-season-card futbolcu-season-tff">
+      <p class="futbolcu-season-kicker">Resmi kayıt · TFF</p>
+      <h3>${esc(tffSeason.competition || tffSeason.label)}</h3>
+      <p class="futbolcu-season-sub">${esc(tffSeason.label || tffSeason.id)}</p>
+      <ul class="futbolcu-season-stats">
+        <li><span>Maç</span><strong>${tffSeason.played || tffAgg.appearances}</strong></li>
+        <li><span>Gol</span><strong>${tffSeason.goals || tffAgg.goals}</strong></li>
+        <li><span>Süre</span><strong>${esc(formatDurationTotal(tffAgg.totalMin))}</strong></li>
+        <li><span>G / maç</span><strong>${gpg}</strong></li>
+        <li><span>Skor</span><strong>${esc(rec)}</strong></li>
+      </ul>
+    </article>`);
+  }
+  return `<section class="futbolcu-snapshot">
+    <div class="futbolcu-snapshot-head">
+      <h2>Rakamlarla gelişim</h2>
+      <p class="match-note">Canlı özet — tablolar ve grafikler için <a href="#istatistikler">İstatistikler</a>, sıradaki maç için <a href="#mac">Haftanın maçı</a>.</p>
+    </div>
+    <div class="futbolcu-season-grid">${blocks.join("")}</div>
+  </section>`;
+}
+
+function futbolcuLadderHTML(person) {
+  const career = (person.askf?.career || []).slice(0, 10);
+  if (!career.length) return "";
+  const items = career.map((row, index) => {
+    const { season, competition } = parseCareerLeague(row.league);
+    return `<li class="futbolcu-ladder-item${index === 0 ? " is-current" : ""}">
+      <span class="futbolcu-ladder-season">${esc(season)}</span>
+      <span class="futbolcu-ladder-league">${esc(competition)}</span>
+      <span class="futbolcu-ladder-pg">${esc(row.played)} maç · ${esc(row.goals)} gol</span>
+    </li>`;
+  }).join("");
+  return `<section class="futbolcu-ladder">
+    <h2>Lig basamakları</h2>
+    <p class="match-note">U14'ten bugüne kategori yükselişi (ASKF kariyer satırları).</p>
+    <ol class="futbolcu-ladder-list">${items}</ol>
+  </section>`;
+}
+
+function futbolcuPlayProfileHTML(person) {
+  const tffAgg = playingTimeAggregate(person.matches || [], "", person);
+  const askfMatches = person.askf?.matches || [];
+  let askfMin = 0;
+  askfMatches.forEach((m) => {
+    askfMin += deriveMatchMinutes(m, person);
+  });
+  const totalMin = tffAgg.totalMin + askfMin;
+  if (!totalMin && !numMatch(person.askf?.totals?.goals)) return "";
+  const xgDelta = tffAgg.goals - tffAgg.xg;
+  const startRate = tffAgg.appearances ? Math.round((tffAgg.starts / tffAgg.appearances) * 100) : 0;
+  return `<section class="futbolcu-play-profile">
+    <h2>Oyun profili</h2>
+    <div class="futbolcu-play-grid">
+      <div class="futbolcu-play-stat"><span>Toplam süre (kayıtlı)</span><strong>${esc(formatDurationTotal(totalMin))}</strong></div>
+      <div class="futbolcu-play-stat"><span>İlk 11 oranı (TFF)</span><strong>${startRate}%</strong></div>
+      <div class="futbolcu-play-stat"><span>Maç başına dk</span><strong>${tffAgg.avgMin.toFixed(1)}'</strong></div>
+      <div class="futbolcu-play-stat"><span>xG / 90</span><strong>${xgPer90Rate(person).toFixed(2)}</strong></div>
+      <div class="futbolcu-play-stat"><span>Gol − xG</span><strong>${xgDelta >= 0 ? `+${xgDelta.toFixed(2)}` : xgDelta.toFixed(2)}</strong></div>
+      <div class="futbolcu-play-stat"><span>Kart</span><strong>${numMatch(person.askf?.totals?.yellow)} sarı · ${numMatch(person.askf?.totals?.red)} kırmızı</strong></div>
+    </div>
+  </section>`;
+}
+
 function renderFutbolcu() {
   const action = chapterPhoto(profile, "futbolcu");
   const heroBand = action
@@ -1577,6 +1724,10 @@ function renderFutbolcu() {
     ${heroBand}
     <div class="persona-sheet">
       <p class="persona-lede">${esc(intro)}</p>
+      ${futbolcuIdentityHTML(profile)}
+      ${futbolcuSeasonPanelHTML(profile)}
+      ${futbolcuPlayProfileHTML(profile)}
+      ${futbolcuLadderHTML(profile)}
       <section class="persona-vitals" aria-label="Futbol özeti">
         ${factsHTML(profile.stats)}
       </section>
