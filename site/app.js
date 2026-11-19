@@ -749,6 +749,20 @@ function titleMarkup(title) {
 }
 
 let activeHomeScene = null;
+let homeIdleScene = "kisi";
+
+function defaultHomeSceneId(person) {
+  const withPhoto = CHAPTERS.find((chapter) => chapterBgFile(chapter.id, person));
+  return withPhoto?.id || CHAPTERS[0].id;
+}
+
+function sceneIdForStage(id) {
+  return id === "istatistikler" ? "kupalar" : id;
+}
+
+function resetHomeScene() {
+  setHomeScene(homeIdleScene);
+}
 
 function setHomeScene(id) {
   const stack = document.querySelector(".bg-stack");
@@ -772,12 +786,6 @@ function setHomeScene(id) {
   });
 }
 
-function clearHomeScene() {
-  activeHomeScene = null;
-  document.querySelectorAll(".area_seccion").forEach((area) => area.classList.remove("is-active"));
-  document.querySelectorAll(".bg-slide").forEach((bg) => bg.classList.remove("is-on"));
-}
-
 function initHomeInteractions() {
   const grid = document.querySelector(".home-grid");
   const areas = [...document.querySelectorAll(".area_seccion")];
@@ -786,7 +794,7 @@ function initHomeInteractions() {
     area.addEventListener("pointerenter", () => setHomeScene(area.dataset.scene));
     area.addEventListener("focus", () => setHomeScene(area.dataset.scene));
   });
-  grid.addEventListener("pointerleave", clearHomeScene);
+  grid.addEventListener("pointerleave", resetHomeScene);
   const coarse = window.matchMedia("(hover: none)").matches;
   if (coarse) {
     areas.forEach((area) => {
@@ -801,8 +809,9 @@ function initHomeInteractions() {
 }
 
 function setScene(id) {
+  const stageId = sceneIdForStage(id);
   document.querySelectorAll(".scene").forEach((scene) => {
-    scene.classList.toggle("is-on", scene.dataset.scene === id);
+    scene.classList.toggle("is-on", scene.dataset.scene === stageId);
   });
   document.querySelectorAll(".rail button").forEach((button) => {
     button.setAttribute("aria-current", button.dataset.scene === id ? "true" : "false");
@@ -1694,18 +1703,20 @@ function renderPage() {
   const isHome = page === "home";
   document.body.classList.toggle("is-home", isHome);
   const stage = document.getElementById("stage");
+  const chapterWithHero = !isHome && CHAPTERS.some((chapter) => chapter.id === page && chapterPhoto(profile, chapter.id));
   if (stage) {
-    if (isHome) stage.hidden = true;
-    else stage.removeAttribute("hidden");
+    stage.hidden = isHome || chapterWithHero;
+    if (!stage.hidden) stage.removeAttribute("hidden");
   }
-  document.querySelector(".veil")?.classList.toggle("is-hidden", isHome);
+  document.querySelector(".veil")?.classList.toggle("is-hidden", isHome || chapterWithHero);
   document.querySelector(".grain")?.classList.toggle("is-hidden", isHome);
   document.getElementById("top").innerHTML = headerHTML(isHome);
   document.getElementById("view").innerHTML = isHome ? homeHTML() : PAGES[page]();
   if (isHome) {
     reelObserver?.disconnect();
-    clearHomeScene();
+    homeIdleScene = defaultHomeSceneId(profile);
     initHomeInteractions();
+    setHomeScene(homeIdleScene);
   } else {
     setScene(page);
     window.scrollTo(0, 0);
