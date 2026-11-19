@@ -1496,7 +1496,8 @@ function askfBlockHTML(person) {
   const hasSeasons = buildSeasonCardItems(person).length;
   if (!hasAskf && !hasSeasons) return "";
   return `<section class="group askf-block stats-dashboard">
-    ${url ? `<p class="stats-source-link-row"><a class="stats-source-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">ASKF oyuncu profili</a></p>` : ""}
+    ${url ? `<p class="stats-source-link-row"><a class="stats-source-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Oyuncu profili</a></p>` : ""}
+    ${askfTotalsHTML(askf)}
     <nav class="stats-jump" aria-label="İstatistik bölümleri">
       <a href="#askf-sezonlar">Sezonlar</a>
     </nav>
@@ -1505,10 +1506,7 @@ function askfBlockHTML(person) {
 }
 
 function profileOverviewSectionHTML(person) {
-  const kpi = askfTotalsHTML(person.askf || {});
-  const kpiBlock = kpi ? `<div class="profile-kpi-wrap">${kpi}</div>` : "";
   return `<section class="group profile-overview" id="profil-ozet">
-    ${kpiBlock}
     <div class="profile-facts-wrap">
       <h2>Profil kartları</h2>
       ${factsHTML(person.stats)}
