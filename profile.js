@@ -24,6 +24,16 @@ window.SAHA_DEFAULT = {
   kitInk: "#142018",
   youtube: "https://www.youtube.com/@kuzeyfutbol",
   instagram: "https://www.instagram.com/akinci.k/",
+  contact: {
+    relation: "Babası",
+    name: "Kutluhan AKINCI",
+    phone: "05546902543",
+    phoneDisplay: "0554 690 25 43",
+    email: "a.kutluhan@msn.com",
+    note: "Antrenman, maç planı ve saha ile ilgili başvurular için doğrudan iletişim hattı.",
+    formIntro:
+      "Formu doldurduğunuzda mesajınız e-posta olarak iletilir. Yoğun dönemlerde dönüş birkaç iş günü sürebilir."
+  },
   photos: [
     {
       file: "photos/kuzey-portre.png",
