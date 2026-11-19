@@ -87,6 +87,7 @@ function cleanPhotos(list, max = 24) {
       else if (file.includes("futbolcu")) chapter = "futbolcu";
       else if (file.includes("projeler")) chapter = "projeler";
       else if (file.includes("kupalar")) chapter = "kupalar";
+      else if (file.includes("elci")) chapter = "elci";
       else chapter = "";
     }
     return {
@@ -540,7 +541,10 @@ function renderKupalar() {
 }
 
 function renderElci() {
+  const stance = chapterPhoto(profile, "elci");
+  const lead = stance ? `<div class="article-photo">${photoFigure(stance, "portrait hero ambassador")}</div>` : "";
   return chapterFrame(CHAPTERS[3], `
+    ${lead}
     <p class="motto">${esc(profile.motto || "Yön belli. Hareket bende.")}</p>
     <p class="lede">Elçi burada bir kurum unvanı değil. Oyuna, rakibe ve takıma karşı duruşun adı.</p>
     <section class="group">${itemsHTML(profile.values, "Duruş cümleleri düzenle menüsünden yazılır.")}</section>

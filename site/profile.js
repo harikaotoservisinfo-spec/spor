@@ -35,6 +35,12 @@ window.SAHA_DEFAULT = {
       caption: "Forma günü"
     },
     {
+      file: "photos/kuzey-elci.jpg",
+      chapter: "elci",
+      alt: "Kuzey Akıncı, tribünden sahaya bakarken",
+      caption: "Seyir"
+    },
+    {
       file: "photos/kuzey-projeler.jpg",
       chapter: "projeler",
       alt: "Kuzey Akıncı, tribünde mavi forma ile",

@@ -680,6 +680,17 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   background-position: 50% 18%;
 }
 
+.bg-slide[data-bg="elci"] .bg-ken {
+  background-position: 50% 40%;
+}
+
+.portrait.ambassador img,
+.portrait.hero.ambassador img {
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: center 45%;
+}
+
 .portrait.cup-shot img,
 .portrait.hero.cup-shot img {
   aspect-ratio: 3 / 4;
