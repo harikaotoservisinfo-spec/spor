@@ -1461,52 +1461,105 @@ function footNoteHTML(person) {
 
 let shirtGradSerial = 0;
 
+function kitAccentFor(person) {
+  if (clubIsCisem(person?.team)) return { gold: "#f3d04a", blue: "#1a4d9e", deep: "#0c2848" };
+  return { gold: "#e5ff63", blue: "#8eb8dc", deep: "#142018" };
+}
+
+const SHIRT_BACK_CLIP =
+  "M160 44 C141 44 126 53 116 66 L100 74 C85 81 68 96 58 118 L44 148 C40 156 42 164 52 160 L64 142 L68 278 C70 294 98 302 160 304 C222 302 250 294 252 278 L256 142 L268 160 C278 164 280 156 276 148 L262 118 C252 96 235 81 220 74 L204 66 C194 53 179 44 160 44 Z";
+
 function shirtSVG(person) {
   const name = shirtName(person);
   const number = /^\d{1,2}$/.test(person.number) ? person.number : "";
   const uid = `sg${(shirtGradSerial += 1)}`;
-  const nameSize = name.length > 10 ? 11 : name.length > 8 ? 12.5 : 14;
-  const nameY = number ? 128 : 154;
+  const accent = kitAccentFor(person);
+  const nameSize = name.length > 10 ? 10.5 : name.length > 8 ? 11.5 : 13;
+  const nameY = 124;
   const label = `Forma, ${name}${number ? ` ${number}` : ""}`;
-  return `<div class="shirt-showcase">
+  const crest =
+    person.teamLogo && PHOTO_PATH.test(String(person.teamLogo).trim())
+      ? `<g class="shirt-crest">
+          <circle cx="160" cy="90" r="19" fill="#f7f5ee" stroke="${accent.blue}" stroke-width="1.4"/>
+          <circle cx="160" cy="90" r="16" fill="none" stroke="${accent.gold}" stroke-width="0.6" opacity="0.85"/>
+          <image href="${esc(person.teamLogo)}" x="146" y="76" width="28" height="28" preserveAspectRatio="xMidYMid meet"/>
+        </g>`
+      : "";
+  return `<div class="shirt-showcase shirt-showcase-elite" style="--shirt-gold:${accent.gold};--shirt-blue:${accent.blue}">
     <span class="shirt-showcase-glow" aria-hidden="true"></span>
-    <svg class="shirt shirt-premium" viewBox="0 0 240 292" role="img" aria-label="${esc(label)}">
-      <defs>
-        <linearGradient id="${uid}-body" x1="52" y1="20" x2="188" y2="250" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="color-mix(in srgb, var(--kit) 78%, white)"/>
-          <stop offset="45%" stop-color="var(--kit)"/>
-          <stop offset="100%" stop-color="color-mix(in srgb, var(--kit) 70%, var(--kit-ink) 12%)"/>
-        </linearGradient>
-        <linearGradient id="${uid}-yoke" x1="120" y1="28" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="color-mix(in srgb, var(--kit) 88%, white)"/>
-          <stop offset="100%" stop-color="color-mix(in srgb, var(--kit) 92%, var(--kit-ink) 4%)"/>
-        </linearGradient>
-        <linearGradient id="${uid}-ice" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="color-mix(in srgb, var(--ice) 92%, white)"/>
-          <stop offset="100%" stop-color="color-mix(in srgb, var(--ice) 65%, var(--kit-ink) 8%)"/>
-        </linearGradient>
-        <filter id="${uid}-soft" x="-20%" y="-12%" width="140%" height="130%">
-          <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000" flood-opacity="0.42"/>
-        </filter>
-        <filter id="${uid}-num" x="-15%" y="-15%" width="130%" height="130%">
-          <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="var(--kit-ink)" flood-opacity="0.22"/>
-        </filter>
-      </defs>
-      <ellipse class="shirt-floor" cx="120" cy="272" rx="72" ry="10" fill="var(--kit-ink)" opacity="0.18"/>
-      <g filter="url(#${uid}-soft)">
-        <path fill="url(#${uid}-body)" d="M48 58 L78 28 L98 50 C108 62 132 62 142 50 L162 28 L192 58 L212 98 L184 116 L184 232 L56 232 L56 116 L28 98 Z"/>
-        <path fill="url(#${uid}-yoke)" opacity="0.55" d="M78 28 L98 50 L142 50 L162 28 L152 48 L88 48 Z"/>
-        <path fill="url(#${uid}-ice)" d="M28 98 L56 116 L52 132 L20 108 Z"/>
-        <path fill="url(#${uid}-ice)" d="M212 98 L184 116 L188 132 L220 108 Z"/>
-        <path fill="none" stroke="color-mix(in srgb, var(--ice) 70%, var(--kit-ink) 10%)" stroke-width="2.2" stroke-linecap="round" d="M98 50 C108 66 132 66 142 50"/>
-        <path fill="none" stroke="color-mix(in srgb, var(--kit-ink) 12%, transparent)" stroke-width="0.7" opacity="0.65" d="M68 122 L68 220 M172 122 L172 220"/>
-        <path fill="none" stroke="color-mix(in srgb, var(--kit-ink) 8%, transparent)" stroke-width="0.6" opacity="0.5" d="M56 168 L184 168 M60 196 L180 196"/>
-        <path fill="color-mix(in srgb, var(--ice) 35%, transparent)" d="M104 50 L136 50 L132 58 L108 58 Z"/>
-        ${number ? `<text class="shirt-num" filter="url(#${uid}-num)" x="120" y="188" text-anchor="middle" fill="var(--kit-ink)" stroke="color-mix(in srgb, var(--kit-ink) 12%, white)" stroke-width="0.55" paint-order="stroke fill" font-family="Fraunces, Georgia, serif" font-size="76" font-weight="600" letter-spacing="-0.03em">${esc(number)}</text>` : ""}
-        <text class="shirt-name" x="120" y="${nameY}" text-anchor="middle" fill="var(--kit-ink)" font-family="Outfit, sans-serif" font-size="${nameSize}" font-weight="600" letter-spacing="0.32em">${esc(name)}</text>
-      </g>
-    </svg>
-    ${number ? `<p class="shirt-showcase-caption"><span class="shirt-showcase-no">${esc(number)}</span><span class="shirt-showcase-divider" aria-hidden="true"></span><span>${esc(name)}</span></p>` : ""}
+    <span class="shirt-showcase-ring" aria-hidden="true"></span>
+    <div class="shirt-stage">
+      <svg class="shirt shirt-premium shirt-elite" viewBox="0 0 320 360" role="img" aria-label="${esc(label)}">
+        <defs>
+          <clipPath id="${uid}-clip"><path d="${SHIRT_BACK_CLIP}"/></clipPath>
+          <pattern id="${uid}-weave" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(24)">
+            <line x1="0" y1="0" x2="0" y2="5" stroke="#0a120e" stroke-opacity="0.055" stroke-width="0.65"/>
+          </pattern>
+          <pattern id="${uid}-mesh" width="8" height="8" patternUnits="userSpaceOnUse">
+            <path d="M0 8 L8 0 M-2 2 L2 -2 M6 10 L10 6" stroke="${accent.blue}" stroke-opacity="0.09" stroke-width="0.45"/>
+          </pattern>
+          <linearGradient id="${uid}-body" x1="88" y1="40" x2="248" y2="320" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#fcfbf7"/>
+            <stop offset="18%" stop-color="var(--kit)"/>
+            <stop offset="55%" stop-color="color-mix(in srgb, var(--kit) 96%, #ddd8cc)"/>
+            <stop offset="100%" stop-color="color-mix(in srgb, var(--kit) 72%, var(--kit-ink) 10%)"/>
+          </linearGradient>
+          <linearGradient id="${uid}-sheen" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="white" stop-opacity="0.22"/>
+            <stop offset="35%" stop-color="white" stop-opacity="0"/>
+            <stop offset="100%" stop-color="#0a120e" stop-opacity="0.12"/>
+          </linearGradient>
+          <linearGradient id="${uid}-sleeve" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="color-mix(in srgb, var(--ice) 95%, white)"/>
+            <stop offset="100%" stop-color="color-mix(in srgb, ${accent.blue} 35%, var(--ice))"/>
+          </linearGradient>
+          <linearGradient id="${uid}-plate" x1="160" y1="104" x2="160" y2="138" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="color-mix(in srgb, var(--kit-ink) 14%, transparent)"/>
+            <stop offset="100%" stop-color="color-mix(in srgb, var(--kit-ink) 6%, transparent)"/>
+          </linearGradient>
+          <filter id="${uid}-drop" x="-25%" y="-15%" width="150%" height="140%">
+            <feDropShadow dx="0" dy="22" stdDeviation="20" flood-color="#000" flood-opacity="0.5"/>
+          </filter>
+          <filter id="${uid}-knit" x="-2%" y="-2%" width="104%" height="104%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="8" result="n"/>
+            <feColorMatrix type="saturate" values="0" in="n" result="g"/>
+            <feBlend in="SourceGraphic" in2="g" mode="multiply" result="b"/>
+            <feComponentTransfer in="b"><feFuncA type="linear" slope="0.08"/></feComponentTransfer>
+          </filter>
+        </defs>
+        <ellipse cx="160" cy="332" rx="92" ry="11" fill="#000" opacity="0.28"/>
+        <ellipse cx="160" cy="330" rx="78" ry="7" fill="${accent.blue}" opacity="0.12"/>
+        <g filter="url(#${uid}-drop)">
+          <path fill="url(#${uid}-sleeve)" d="M58 118 C46 128 36 138 30 152 L38 162 C48 150 54 142 64 134 L68 126 Z"/>
+          <path fill="url(#${uid}-sleeve)" d="M262 118 C274 128 284 138 290 152 L282 162 C272 150 266 142 256 134 L252 126 Z"/>
+          <path fill="none" stroke="${accent.blue}" stroke-width="3.2" stroke-linecap="round" d="M64 152 C52 156 42 162 36 170"/>
+          <path fill="none" stroke="${accent.blue}" stroke-width="3.2" stroke-linecap="round" d="M256 152 C268 156 278 162 284 170"/>
+          <g clip-path="url(#${uid}-clip)" filter="url(#${uid}-knit)">
+            <path fill="url(#${uid}-body)" d="${SHIRT_BACK_CLIP}"/>
+            <rect x="72" y="70" width="10" height="240" fill="${accent.gold}" opacity="0.55"/>
+            <rect x="238" y="70" width="10" height="240" fill="${accent.blue}" opacity="0.42"/>
+            <rect x="76" y="198" width="168" height="78" fill="url(#${uid}-mesh)" opacity="0.85"/>
+            <rect x="0" y="0" width="320" height="360" fill="url(#${uid}-weave)" opacity="0.9"/>
+            <path fill="url(#${uid}-sheen)" d="${SHIRT_BACK_CLIP}"/>
+            <path fill="none" stroke="color-mix(in srgb, var(--kit-ink) 10%, transparent)" stroke-width="0.65" d="M108 108 L112 278"/>
+            <path fill="none" stroke="color-mix(in srgb, var(--kit-ink) 10%, transparent)" stroke-width="0.65" d="M212 108 L208 278"/>
+            <path fill="none" stroke="color-mix(in srgb, var(--kit-ink) 7%, transparent)" stroke-width="0.5" d="M88 168 L232 168 M90 216 L230 216 M92 252 L228 252"/>
+          </g>
+          <path fill="none" stroke="color-mix(in srgb, ${accent.blue} 65%, white)" stroke-width="2.4" d="M118 66 C128 80 152 82 162 68"/>
+          <path fill="${accent.blue}" opacity="0.35" d="M148 64 L172 64 L168 74 L152 74 Z"/>
+          <path fill="none" stroke="color-mix(in srgb, var(--kit-ink) 22%, transparent)" stroke-width="0.8" d="M92 286 Q160 296 228 286"/>
+          ${crest}
+          <rect x="82" y="106" width="156" height="30" rx="5" fill="url(#${uid}-plate)" stroke="color-mix(in srgb, var(--kit-ink) 12%, transparent)" stroke-width="0.6"/>
+          <text class="shirt-name" x="160" y="${nameY}" text-anchor="middle" fill="var(--kit-ink)" font-family="Outfit, sans-serif" font-size="${nameSize}" font-weight="700" letter-spacing="0.38em">${esc(name)}</text>
+          ${number
+    ? `<text aria-hidden="true" x="160" y="248" text-anchor="middle" fill="${accent.deep}" font-family="Fraunces, Georgia, serif" font-size="108" font-weight="700" opacity="0.12">${esc(number)}</text>
+          <text class="shirt-num shirt-num-depth" x="160" y="242" text-anchor="middle" fill="${accent.blue}" font-family="Fraunces, Georgia, serif" font-size="108" font-weight="700" opacity="0.18">${esc(number)}</text>
+          <text class="shirt-num" x="160" y="236" text-anchor="middle" fill="var(--kit-ink)" stroke="color-mix(in srgb, white 40%, var(--kit-ink))" stroke-width="0.7" paint-order="stroke fill" font-family="Fraunces, Georgia, serif" font-size="104" font-weight="700" letter-spacing="-0.04em">${esc(number)}</text>`
+    : ""}
+        </g>
+      </svg>
+    </div>
+    ${number ? `<p class="shirt-showcase-caption"><span class="shirt-showcase-badge">Matchday</span><span class="shirt-showcase-no">${esc(number)}</span><span class="shirt-showcase-divider" aria-hidden="true"></span><span>${esc(name)}</span></p>` : ""}
   </div>`;
 }
 
