@@ -1001,6 +1001,29 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   margin: 0.15rem 0 1.1rem;
 }
 
+.profile-overview {
+  margin-top: 1.35rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.profile-kpi-wrap .kpi-bento {
+  margin: 0 0 1.35rem;
+}
+
+.profile-facts-wrap h2 {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
+.profile-overview .facts {
+  border-radius: 14px;
+  padding: 0.15rem 0;
+  background: color-mix(in srgb, var(--sheet) 55%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+}
+
 @media (min-width: 720px) {
   .kpi-bento {
     grid-template-columns: repeat(4, minmax(0, 1fr));

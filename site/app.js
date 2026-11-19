@@ -1503,11 +1503,22 @@ function askfBlockHTML(person) {
       </div>
       ${url ? `<a class="stats-source-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Oyuncu profili</a>` : ""}
     </div>
-    ${askfTotalsHTML(askf)}
     <nav class="stats-jump" aria-label="İstatistik bölümleri">
       <a href="#askf-sezonlar">Sezonlar</a>
     </nav>
     ${seasonCardsHTML(person)}
+  </section>`;
+}
+
+function profileOverviewSectionHTML(person) {
+  const kpi = askfTotalsHTML(person.askf || {});
+  const kpiBlock = kpi ? `<div class="profile-kpi-wrap">${kpi}</div>` : "";
+  return `<section class="group profile-overview" id="profil-ozet">
+    ${kpiBlock}
+    <div class="profile-facts-wrap">
+      <h2>Profil kartları</h2>
+      ${factsHTML(person.stats)}
+    </div>
   </section>`;
 }
 
@@ -1521,10 +1532,7 @@ function renderIstatistikler() {
     <div class="persona-sheet persona-stats">
       <p class="persona-lede">ASKF kariyeri ve TFF resmi lig verisi — tek sayfada, doğrulanmış kaynaklarla.</p>
       ${askfBlockHTML(profile)}
-      <section class="group">
-        <h2>Profil kartları</h2>
-        ${factsHTML(profile.stats)}
-      </section>
+      ${profileOverviewSectionHTML(profile)}
     </div>
   `, "article-persona article-stats");
 }
