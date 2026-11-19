@@ -641,7 +641,7 @@ function goalEventRowsHTML(person, seasonId) {
     const match = matchByMacId(person.matches, goal.macId);
     const macUrl = goal.macId ? `https://www.tff.org/Default.aspx?pageId=29&macId=${encodeURIComponent(goal.macId)}` : "";
     const labelHtml = match
-      ? `${clubNameHTML(match.home)}<span class="match-dash"> – </span><strong class="match-score-inline">${esc(match.score)}</strong><span class="match-dash"> – </span>${clubNameHTML(match.away)}`
+      ? `${clubNameHTML(match.home)}<span class="match-dash"> – </span>${scoreFromMatchHTML(match, { wrap: "span" })}<span class="match-dash"> – </span>${clubNameHTML(match.away)}`
       : esc(`Maç ${goal.macId}`);
     return `<tr>
       <td>${esc(goal.date || match?.date || "")}</td>
@@ -708,10 +708,9 @@ function clubIsCisem(name) {
 }
 
 function matchOutcome(home, away, score) {
-  const parts = String(score || "").trim().match(/^(\d+)\s*-\s*(\d+)$/);
-  if (!parts) return "";
-  const homeGoals = Number(parts[1]);
-  const awayGoals = Number(parts[2]);
+  const parsed = parseScoreParts(score);
+  if (!parsed) return "";
+  const { home: homeGoals, away: awayGoals } = parsed;
   const weHome = clubIsCisem(home);
   const weAway = clubIsCisem(away);
   if (!weHome && !weAway) return "";
@@ -720,6 +719,104 @@ function matchOutcome(home, away, score) {
   if (scored > conceded) return "G";
   if (scored < conceded) return "M";
   return "B";
+}
+
+function parseScoreParts(score) {
+  const parts = String(score || "").trim().match(/^(\d+)\s*[-–]\s*(\d+)$/);
+  if (!parts) return null;
+  return { home: Number(parts[1]), away: Number(parts[2]) };
+}
+
+function parseMatchupHomeAway(matchup) {
+  const parts = String(matchup || "").split(/\s*[–\-]\s*/).map((s) => s.trim()).filter(Boolean);
+  if (parts.length === 2) return { home: parts[0], away: parts[1] };
+  return { home: "", away: "" };
+}
+
+function matchHomeAway(match) {
+  if (match.home || match.away) {
+    return { home: match.home || "", away: match.away || "" };
+  }
+  return parseMatchupHomeAway(match.matchup);
+}
+
+function matchOutcomeFromRecord(match) {
+  const { home, away } = matchHomeAway(match);
+  return matchOutcome(home, away, match.score);
+}
+
+function outcomeRowClass(outcome) {
+  if (outcome === "G") return "match-row-win";
+  if (outcome === "M") return "match-row-loss";
+  if (outcome === "B") return "match-row-draw";
+  return "";
+}
+
+function outcomeResultClass(outcome) {
+  if (outcome === "G") return "result-win";
+  if (outcome === "M") return "result-loss";
+  if (outcome === "B") return "result-draw";
+  return "";
+}
+
+function scoreSplitHTML(score, home, away, wrap = "strong") {
+  const parsed = parseScoreParts(score);
+  const outcome = matchOutcome(home, away, score);
+  const tone = outcomeResultClass(outcome);
+  if (!parsed) {
+    const inner = esc(score || "—");
+    return wrap === "strong" ? `<strong class="match-score-badge">${inner}</strong>` : `<span class="match-score">${inner}</span>`;
+  }
+  const weHome = clubIsCisem(home);
+  const weAway = clubIsCisem(away);
+  const homeClass = weHome ? "score-us" : "score-them";
+  const awayClass = weAway ? "score-us" : "score-them";
+  const inner = `<span class="match-score-split ${tone}"><span class="${homeClass}">${parsed.home}</span><span class="score-sep">-</span><span class="${awayClass}">${parsed.away}</span></span>`;
+  if (wrap === "strong") return `<strong class="match-score-badge ${tone}">${inner}</strong>`;
+  return `<span class="match-score">${inner}</span>`;
+}
+
+function scoreFromMatchHTML(match, opts = {}) {
+  const { home, away } = matchHomeAway(match);
+  const wrap = opts.wrap || "strong";
+  const link = opts.link || "";
+  const html = scoreSplitHTML(match.score, home, away, wrap);
+  if (!link) return html;
+  return `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer" class="score-link">${html}</a>`;
+}
+
+function matchGoalsCellHTML(goals) {
+  const g = numMatch(goals);
+  if (!g) return `<span class="match-val match-goals-none">—</span>`;
+  return `<span class="match-val match-goals-scored">${g}</span>`;
+}
+
+function matchRoleCellHTML(roleRaw) {
+  const role = cleanMatchRole(roleRaw);
+  const label = role ? roleLabel(role) : (roleRaw ? esc(String(roleRaw)) : "—");
+  if (!role) return `<span class="match-val match-role">${label}</span>`;
+  const lower = String(roleRaw || role).toLocaleLowerCase("tr");
+  const cls = lower.includes("ilk") ? "match-role-start" : lower.includes("yedek") ? "match-role-sub" : "match-role";
+  return `<span class="match-val match-role ${cls}">${esc(label)}</span>`;
+}
+
+function matchMinutesCellHTML(minutes, strong = true) {
+  const text = minutes ? `${minutes}'` : "—";
+  const cls = minutes ? "match-min-val" : "match-val-muted";
+  if (!strong) return `<span class="match-val ${cls}">${text}</span>`;
+  return `<span class="match-val match-min ${cls}"><strong>${text}</strong></span>`;
+}
+
+function matchXgCellHTML(xg, hasMinutes) {
+  const text = hasMinutes ? xg.toFixed(2) : "—";
+  const cls = hasMinutes ? "match-xg-val" : "match-val-muted";
+  return `<span class="match-val ${cls}">${text}</span>`;
+}
+
+function matchResultBadgeHTML(outcome) {
+  if (!outcome) return `<span class="match-val match-val-muted">—</span>`;
+  const label = outcome === "G" ? "G" : outcome === "M" ? "M" : "B";
+  return `<span class="match-result result-${outcome === "G" ? "win" : outcome === "M" ? "loss" : "draw"}" aria-label="Sonuç">${label}</span>`;
 }
 
 function shortClubName(name) {
@@ -1283,29 +1380,26 @@ function matchesTableHTML(matches, seasonId, person, opts = {}) {
     return `<p class="empty">Bu sezon için maç henüz eklenmedi.</p>`;
   }
   const body = rows.map((match) => {
-    const outcome = matchOutcome(match.home, match.away, match.score);
-    const outcomeClass = outcome ? ` result-${outcome === "G" ? "win" : outcome === "M" ? "loss" : "draw"}` : "";
+    const outcome = matchOutcomeFromRecord(match);
+    const rowClass = outcomeRowClass(outcome);
     const macUrl = match.macId ? `https://www.tff.org/Default.aspx?pageId=29&macId=${encodeURIComponent(match.macId)}` : "";
-    const scoreCell = macUrl
-      ? `<a href="${esc(macUrl)}" target="_blank" rel="noopener noreferrer" class="score-link">${esc(match.score)}</a>`
-      : esc(match.score);
+    const scoreCell = scoreFromMatchHTML(match, { wrap: "span", link: macUrl });
     const when = [match.date, match.time].filter(Boolean).join(" · ");
     const minutes = deriveMatchMinutes(match, person);
     const xg = matchExpectedGoals(match, person);
     const goals = numMatch(match.goals);
-    const role = cleanMatchRole(match.role);
-    return `<tr>
+    return `<tr class="${rowClass}">
       <td class="match-when">${macUrl ? `<a href="${esc(macUrl)}" target="_blank" rel="noopener noreferrer">${esc(when)}</a>` : esc(when)}</td>
       <td class="match-teams">${clubNameHTML(match.home)}
-        <span class="match-score">${scoreCell}</span>
+        ${scoreCell}
         ${clubNameHTML(match.away)}</td>
-      <td class="match-play" title="Kadro">${esc(roleLabel(role))}</td>
-      <td class="match-play">${formatMinuteMark(match.subIn)}</td>
-      <td class="match-play">${formatMinuteMark(match.subOut)}</td>
-      <td class="match-play match-min"><strong>${minutes ? `${minutes}'` : "—"}</strong></td>
-      <td class="match-play">${goals || "—"}</td>
-      <td class="match-play match-xg">${minutes ? xg.toFixed(2) : "—"}</td>
-      <td class="match-result${outcomeClass}" aria-label="Sonuç">${outcome ? esc(outcome) : "—"}</td>
+      <td class="match-play" title="Kadro">${matchRoleCellHTML(match.role)}</td>
+      <td class="match-play match-val-muted">${formatMinuteMark(match.subIn)}</td>
+      <td class="match-play match-val-muted">${formatMinuteMark(match.subOut)}</td>
+      <td class="match-play">${matchMinutesCellHTML(minutes)}</td>
+      <td class="match-play">${matchGoalsCellHTML(goals)}</td>
+      <td class="match-play">${matchXgCellHTML(xg, Boolean(minutes))}</td>
+      <td class="match-play match-result-col">${matchResultBadgeHTML(outcome)}</td>
     </tr>`;
   }).join("");
   const intro = skipIntro ? "" : playingTimeIntroHTML(person);
@@ -1492,26 +1586,28 @@ function askfLeagueCards(askf, season, competition) {
 function askfSeasonMatchRows(matches, person) {
   if (!matches.length) return `<p class="empty">Bu lig için maç kaydı yok.</p>`;
   const body = matches.map((match) => {
-    const role = match.role ? roleLabel(match.role) : "—";
+    const outcome = matchOutcomeFromRecord(match);
+    const rowClass = outcomeRowClass(outcome);
     const minutes = person ? deriveMatchMinutes(match, person) : numMatch(match.minutes);
-    const mins = minutes ? `${minutes}'` : (match.minutes ? `${match.minutes}'` : "—");
-    const xg = person && minutes ? matchExpectedGoals(match, person).toFixed(2) : "—";
+    const mins = minutes || numMatch(match.minutes);
+    const xg = person && mins ? matchExpectedGoals(match, person) : 0;
     const goals = numMatch(match.goals);
-    return `<tr>
+    return `<tr class="${rowClass}">
       <td class="match-when">${esc(match.date)}</td>
       <td class="match-teams">${formatMatchupHTML(match.matchup)}</td>
-      <td class="match-play match-score-col"><strong>${esc(match.score)}</strong></td>
-      <td class="match-play">${esc(role)}</td>
-      <td class="match-play">${formatMinuteMark(match.subIn)}</td>
-      <td class="match-play">${formatMinuteMark(match.subOut)}</td>
-      <td class="match-play match-min"><strong>${mins}</strong></td>
-      <td class="match-play">${goals || "—"}</td>
-      <td class="match-play match-xg">${xg}</td>
+      <td class="match-play match-score-col">${scoreFromMatchHTML(match)}</td>
+      <td class="match-play">${matchRoleCellHTML(match.role)}</td>
+      <td class="match-play match-val-muted">${formatMinuteMark(match.subIn)}</td>
+      <td class="match-play match-val-muted">${formatMinuteMark(match.subOut)}</td>
+      <td class="match-play">${matchMinutesCellHTML(mins)}</td>
+      <td class="match-play">${matchGoalsCellHTML(goals)}</td>
+      <td class="match-play">${matchXgCellHTML(xg, Boolean(mins))}</td>
+      <td class="match-play match-result-col">${matchResultBadgeHTML(outcome)}</td>
     </tr>`;
   }).join("");
   return `<div class="match-scroll season-match-scroll" tabindex="0">
     <table class="match-table match-table-season match-table-askf">
-      <thead><tr><th>Tarih</th><th>Maç</th><th>Skor</th><th>Kadro</th><th>Giriş</th><th>Çıkış</th><th>Dk</th><th>G</th><th>xG</th></tr></thead>
+      <thead><tr><th>Tarih</th><th>Maç</th><th>Skor</th><th>Kadro</th><th>Giriş</th><th>Çıkış</th><th>Dk</th><th>G</th><th>xG</th><th></th></tr></thead>
       <tbody>${body}</tbody>
     </table>
   </div>`;
@@ -1519,13 +1615,18 @@ function askfSeasonMatchRows(matches, person) {
 
 function askfSeasonGoalRows(goals) {
   if (!goals.length) return `<p class="empty season-empty">Bu sezonda gol kaydı yok.</p>`;
-  const body = goals.map((goal) => `<tr>
+  const body = goals.map((goal) => {
+    const pseudo = { matchup: goal.matchup, score: goal.score };
+    const outcome = matchOutcomeFromRecord(pseudo);
+    return `<tr class="${outcomeRowClass(outcome)}">
     <td class="match-when">${esc(goal.date)}</td>
     <td class="match-teams">${formatMatchupHTML(goal.matchup)}</td>
-    <td class="match-play match-score-col"><strong>${esc(goal.score)}</strong></td>
-    <td class="match-play"><strong>${esc(goal.minute)}'</strong></td>
-  </tr>`).join("");
-  return `<div class="match-scroll"><table class="match-table match-table-season"><thead><tr><th>Tarih</th><th>Maç</th><th>Skor</th><th>Dk</th></tr></thead><tbody>${body}</tbody></table></div>`;
+    <td class="match-play match-score-col">${scoreFromMatchHTML(pseudo)}</td>
+    <td class="match-play"><span class="match-val match-goal-minute"><strong>${esc(goal.minute)}'</strong></span></td>
+    <td class="match-play match-result-col">${matchResultBadgeHTML(outcome)}</td>
+  </tr>`;
+  }).join("");
+  return `<div class="match-scroll"><table class="match-table match-table-season"><thead><tr><th>Tarih</th><th>Maç</th><th>Skor</th><th>Dk</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 function askfSeasonCardRows(cards) {
@@ -1533,12 +1634,14 @@ function askfSeasonCardRows(cards) {
   const body = cards.map((card) => {
     const type = String(card.card || "").toLocaleLowerCase("tr");
     const klass = type.includes("kırmızı") || type.includes("kirmizi") ? "card-red" : "card-yellow";
-    return `<tr>
+    const pseudo = { matchup: card.matchup, score: card.score };
+    const outcome = matchOutcomeFromRecord(pseudo);
+    return `<tr class="${outcomeRowClass(outcome)}">
       <td class="match-when">${esc(card.date)}</td>
       <td class="match-teams">${formatMatchupHTML(card.matchup)}</td>
-      <td class="match-play match-score-col"><strong>${esc(card.score)}</strong></td>
+      <td class="match-play match-score-col">${scoreFromMatchHTML(pseudo)}</td>
       <td class="match-play"><span class="card-pill ${klass}">${esc(card.card || "Kart")}</span></td>
-      <td class="match-play">${esc(card.minute)}'</td>
+      <td class="match-play match-val-muted">${esc(card.minute)}'</td>
     </tr>`;
   }).join("");
   return `<div class="season-subblock">
