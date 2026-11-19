@@ -29,8 +29,11 @@ const ROW_FIELDS = {
   stats: ["label", "value"],
   honours: ["year", "title", "detail"],
   values: ["title", "text"],
-  dreams: ["title", "text"]
+  dreams: ["title", "text"],
+  photos: ["file", "alt", "caption"]
 };
+
+const PHOTO_PATH = /^photos\/[a-z0-9._-]+\.(png|jpe?g|webp)$/i;
 
 const PLACEHOLDERS = {
   label: "Başlık",
@@ -38,7 +41,8 @@ const PLACEHOLDERS = {
   year: "Yıl",
   title: "Ad",
   detail: "Not",
-  text: "Cümle"
+  text: "Cümle",
+  file: "photos/dosya.png"
 };
 
 const DEFAULT = window.SAHA_DEFAULT;
@@ -69,6 +73,39 @@ function cleanLine(value, max, fallback = "") {
 
 function cleanBlock(value, max) {
   return String(value ?? "").replace(/\r/g, "").trim().slice(0, max);
+}
+
+function cleanPhotos(list, max = 24) {
+  if (!Array.isArray(list)) return [];
+  return list.slice(0, max).map((item) => {
+    const file = String(item?.file ?? "").trim();
+    if (!PHOTO_PATH.test(file)) return null;
+    return {
+      file,
+      alt: cleanLine(item?.alt, 120, "Fotoğraf"),
+      caption: cleanLine(item?.caption, 120)
+    };
+  }).filter(Boolean);
+}
+
+function heroPhoto(person) {
+  return person.photos?.[0] || null;
+}
+
+function photoFigure(photo, className = "portrait") {
+  if (!photo?.file) return "";
+  const cap = photo.caption ? `<figcaption>${esc(photo.caption)}</figcaption>` : "";
+  return `<figure class="${className}">
+    <img src="${esc(photo.file)}" alt="${esc(photo.alt)}" width="960" height="1200" decoding="async" loading="lazy">
+    ${cap}
+  </figure>`;
+}
+
+function galleryHTML(photos) {
+  if (!photos.length) {
+    return `<p class="empty">İlk fotoğraf burada görünür.</p>`;
+  }
+  return `<div class="gallery">${photos.map((photo) => photoFigure(photo, "gallery-card")).join("")}</div>`;
 }
 
 function cleanList(list, keys, limits, max = 12) {
@@ -105,6 +142,10 @@ function sanitize(data, useFallback = true) {
     style: cleanBlock(source.style, 800),
     kit: safeColor(source.kit, "#f3f1ea"),
     kitInk: safeColor(source.kitInk, "#142018"),
+    photos: (() => {
+      const list = cleanPhotos(source.photos);
+      return list.length ? list : cleanPhotos(DEFAULT.photos || []);
+    })(),
     facts: cleanList(source.facts, ["label", "value"], { label: 40, value: 80 }),
     stats: cleanList(source.stats, ["label", "value"], { label: 40, value: 20 }),
     honours: cleanList(source.honours, ["year", "title", "detail"], { year: 12, title: 60, detail: 180 }),
@@ -167,6 +208,10 @@ function applyProfile(person) {
   document.documentElement.style.setProperty("--kit", person.kit);
   document.documentElement.style.setProperty("--kit-ink", person.kitInk);
   document.title = fullName(person);
+  const hero = heroPhoto(person);
+  const url = hero ? `url("${hero.file}")` : "none";
+  document.documentElement.style.setProperty("--photo-kisi", url);
+  document.documentElement.style.setProperty("--photo-futbolcu", url);
 }
 
 function setScene(id) {
@@ -213,11 +258,19 @@ function headerHTML() {
 }
 
 function homeHTML() {
-  const panels = CHAPTERS.map((chapter) => `<a class="panel" href="#${chapter.id}" data-scene="${chapter.id}">
+  const hero = heroPhoto(profile);
+  const panels = CHAPTERS.map((chapter) => {
+    const shot = chapter.id === "kisi" && hero
+      ? `<figure class="panel-shot"><img src="${esc(hero.file)}" alt="${esc(hero.alt)}" width="480" height="640" decoding="async" loading="eager"></figure>`
+      : "";
+    const extra = chapter.id === "kisi" && hero ? " panel-photo" : "";
+    return `<a class="panel${extra}" href="#${chapter.id}" data-scene="${chapter.id}">
       <span class="idx">${chapter.index}</span>
       <h2>${esc(chapter.title)}</h2>
       <p>${esc(chapter.line)}</p>
-    </a>`).join("");
+      ${shot}
+    </a>`;
+  }).join("");
   const dots = CHAPTERS.map((chapter) => `<button type="button" data-action="scene" data-scene="${chapter.id}" aria-label="${esc(chapter.title)}"></button>`).join("");
   return `<h1 class="sr-only">${esc(fullName(profile))}</h1>
     <div class="reel" id="reel">${panels}</div>
@@ -307,13 +360,20 @@ function renderKisi() {
   if (profile.city) bits.push(profile.city);
   if (profile.idol) bits.push(`Örnek aldığı oyuncu: ${profile.idol}.`);
   const lede = bits.length ? `<p class="lede">${esc(bits.join(" "))}</p>` : "";
+  const hero = heroPhoto(profile);
+  const lead = hero ? `<div class="article-photo">${photoFigure(hero, "portrait hero")}</div>` : "";
   return chapterFrame(CHAPTERS[0], `
+    ${lead}
     ${lede}
     <div class="prose">${richText(profile.bio)}</div>
     ${etymology}
     ${factsHTML(profile.facts)}
     ${optionalBlock("Gün", profile.day, "Okul, antrenman ve akşamın sırası buraya gelir.", "f-day")}
     ${optionalBlock("Merak", profile.loves, "Sevdiği oyun, eşya ya da saat buraya yazılır.", "f-loves")}
+  <section class="group">
+      <h2>Fotoğraflar</h2>
+      ${galleryHTML(profile.photos)}
+    </section>
   `);
 }
 
@@ -337,6 +397,7 @@ function renderFutbolcu() {
         </section>
       </div>
       <div class="kit-col">
+        ${(() => { const h = heroPhoto(profile); return h ? photoFigure(h, "portrait kit-shot") : ""; })()}
         ${shirtSVG(profile)}
         <div class="pitch-card">
           <h2>Mevki</h2>
@@ -454,6 +515,9 @@ function editorHTML() {
         ${area("f-loves", "Merak", profile.loves)}
         ${area("f-style", "Oyun fikri", profile.style)}
       </div>
+      <h2>Fotoğraflar</h2>
+      <p class="empty">Dosyalar site klasöründeki <code>photos/</code> içinden gelir. Burada alt yazı ve açıklama yazılır.</p>
+      ${rowsHTML("photos", profile.photos)}
       <h2>Kartlar</h2>
       ${rowsHTML("facts", profile.facts)}
       <h2>Rakamlar</h2>
@@ -541,6 +605,7 @@ function readForm(useFallback = false) {
     day: value("f-day"),
     loves: value("f-loves"),
     style: value("f-style"),
+    photos: readRows("photos"),
     facts: readRows("facts"),
     stats: readRows("stats"),
     honours: readRows("honours"),

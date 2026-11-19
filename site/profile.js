@@ -15,6 +15,13 @@ window.SAHA_DEFAULT = {
   style: "Oyun fikri markanın cümlesi: önce gör, sonra akın et. Topu kazanınca acele yok. Basit pas, doğru ayak. Mevki ve takım yazılınca bu sayfa ona göre daralır.",
   kit: "#f3f1ea",
   kitInk: "#142018",
+  photos: [
+    {
+      file: "photos/kuzey-portre.png",
+      alt: "Kuzey Akıncı, yeşil-siyah antrenman ceketiyle pistte",
+      caption: "Pistte"
+    }
+  ],
   facts: [],
   stats: [],
   honours: [],
