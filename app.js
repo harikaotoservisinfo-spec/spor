@@ -1,4 +1,5 @@
 const KEY = "kuzey-akinci-profile-v1";
+const ADMIN_STORAGE = "saha-yonetim-unlock";
 const CHAPTERS = [
   { id: "kisi", index: "01", title: "Kişi", kicker: "Önce insan", line: "Formadan önce gelen taraf." },
   { id: "futbolcu", index: "02", title: "Futbolcu", kicker: "Sahada", line: "Numara, mevki, oyun fikri." },
@@ -93,6 +94,27 @@ let editorOpen = false;
 let galleryObjectUrls = [];
 let galleryFilter = "all";
 let galleryLightboxId = null;
+
+function isAdmin() {
+  return localStorage.getItem(ADMIN_STORAGE) === "1";
+}
+
+function tryAdminUnlockFromUrl() {
+  const code = new URLSearchParams(location.search).get("yonetim");
+  if (!code) return false;
+  const expected = String(profile?.adminPin || DEFAULT.adminPin || "").trim();
+  if (!expected || code !== expected) return false;
+  localStorage.setItem(ADMIN_STORAGE, "1");
+  const hash = location.hash || "";
+  history.replaceState(null, "", `${location.pathname}${hash}`);
+  return true;
+}
+
+function adminOff() {
+  localStorage.removeItem(ADMIN_STORAGE);
+  renderPage();
+  syncChrome();
+}
 let reelObserver = null;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -750,6 +772,7 @@ function sanitize(data, useFallback = true) {
     kitInk: safeColor(source.kitInk, "#142018"),
     youtube: safeSocialUrl(source.youtube, "youtube") || (useFallback ? safeSocialUrl(DEFAULT.youtube, "youtube") : ""),
     instagram: safeSocialUrl(source.instagram, "instagram") || (useFallback ? safeSocialUrl(DEFAULT.instagram, "instagram") : ""),
+    adminPin: cleanLine(source.adminPin, 24, useFallback ? DEFAULT.adminPin || "" : ""),
     photos: mergePhotos(cleanPhotos(source.photos)),
     personaBlocks: mergeStoryBlocks(cleanPersonaBlocks(source.personaBlocks), "personaBlocks"),
     futbolIntro: cleanBlock(source.futbolIntro, 1200, useFallback ? DEFAULT.futbolIntro || "" : ""),
@@ -973,14 +996,14 @@ function headerHTML(isHome) {
       </a>
       <div class="tools home-tools">
         ${menuBtn}
-        <button type="button" data-action="edit">Düzenle</button>
+        ${isAdmin() ? '<button type="button" data-action="edit">Düzenle</button>' : ""}
       </div>`
     : `<a class="brand" href="#">
         ${markSVG(profile)}
         <span class="brand-name">${esc(name)}<small class="brand-tag">${personalSahaHTML(profile)}</small></span>
       </a>
       <div class="tools">
-        <button type="button" data-action="edit">Düzenle</button>
+        ${isAdmin() ? '<button type="button" data-action="edit">Düzenle</button>' : ""}
         <button type="button" data-action="open-menu" aria-expanded="${menuOpen ? "true" : "false"}">Menü</button>
       </div>`;
 }
@@ -1079,7 +1102,7 @@ function factsHTML(list) {
 function optionalBlock(title, text, empty, focus) {
   const body = text
     ? `<div class="prose">${richText(text)}</div>`
-    : `<p class="empty">${esc(empty)}</p><p><button type="button" class="textbtn" data-action="edit" data-focus="${focus}">Yaz</button></p>`;
+    : `<p class="empty">${esc(empty)}</p>${isAdmin() ? `<p><button type="button" class="textbtn" data-action="edit" data-focus="${focus}">Yaz</button></p>` : ""}`;
   return `<section class="group"><h2>${esc(title)}</h2>${body}</section>`;
 }
 
@@ -2478,7 +2501,7 @@ function galleryCardHTML(item) {
       ${item.date ? `<p class="gallery-card-date">${esc(item.date)}</p>` : ""}
       ${item.caption && item.matchLabel ? `<p class="gallery-card-cap">${esc(item.caption)}</p>` : ""}
     </div>
-    <button type="button" class="gallery-remove textbtn" data-action="gallery-remove" data-id="${esc(item.id)}">Sil</button>
+    ${isAdmin() ? `<button type="button" class="gallery-remove textbtn admin-only" data-action="gallery-remove" data-id="${esc(item.id)}">Sil</button>` : ""}
   </article>`;
 }
 
@@ -2502,8 +2525,6 @@ function galleryLightboxHTML(person) {
 
 function renderProjeler() {
   galleryRevokeUrls();
-  const visual = chapterPhoto(profile, "projeler");
-  const lead = visual ? `<div class="article-photo">${photoFigure(visual, "portrait hero stadium")}</div>` : "";
   const matches = galleryMatchCatalog(profile);
   const filterOpts = `<option value="all"${galleryFilter === "all" ? " selected" : ""}>Tüm medya</option>${matches
     .filter((m) => m.macId)
@@ -2513,15 +2534,9 @@ function renderProjeler() {
   const items = galleryFilteredItems(profile);
   const grid = items.length
     ? `<div class="gallery-grid" id="gallery-grid">${items.map((item) => galleryCardHTML(item)).join("")}</div>`
-    : `<p class="empty">Henüz medya yok. Aşağıdan fotoğraf veya video yükleyin.</p>`;
-  return chapterFrame(CHAPTERS[4], `
-    ${lead}
-    <p class="lede">Maçlardan fotoğraf ve kısa videolar. Yüklenen dosyalar bu cihazda saklanır; sunucuda kalıcı kopya için aynı dosyayı <code>photos/gallery/</code> klasörüne de koyabilirsiniz.</p>
-    <section class="gallery-toolbar">
-      <label class="field gallery-field">
-        <span>Filtre</span>
-        <select id="gallery-filter" data-action="gallery-filter">${filterOpts}</select>
-      </label>
+    : `<p class="empty">${isAdmin() ? "Henüz medya yok. Aşağıdan fotoğraf veya video yükleyin." : "Henüz galeriye medya eklenmedi."}</p>`;
+  const adminToolbar = isAdmin()
+    ? `<section class="gallery-toolbar admin-only">
       <label class="field gallery-field">
         <span>Bu maça ekle</span>
         <select id="gallery-upload-match">${uploadMatchOpts}</select>
@@ -2530,10 +2545,27 @@ function renderProjeler() {
         Medya yükle
         <input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" multiple hidden data-action="gallery-pick">
       </label>
+    </section>`
+    : "";
+  const lede = isAdmin()
+    ? "Maçlardan fotoğraf ve kısa videolar. Yüklemeler bu cihazda saklanır; kalıcı sunucu kopyası için <code>photos/gallery/</code> kullanılabilir."
+    : "Maçlardan fotoğraf ve videolar.";
+  return chapterFrame(
+    CHAPTERS[4],
+    `
+    <p class="lede">${lede}</p>
+    <section class="gallery-toolbar gallery-toolbar-public">
+      <label class="field gallery-field">
+        <span>Maç</span>
+        <select id="gallery-filter" data-action="gallery-filter">${filterOpts}</select>
+      </label>
     </section>
+    ${adminToolbar}
     ${grid}
     ${galleryLightboxHTML(profile)}
-  `);
+  `,
+    "article-gallery"
+  );
 }
 
 async function galleryMediaUrl(item) {
@@ -2570,6 +2602,7 @@ async function hydrateGallery() {
 }
 
 async function handleGalleryUpload(fileList) {
+  if (!isAdmin()) return;
   if (!window.SahaGalleryStore) return;
   const macId = document.getElementById("gallery-upload-match")?.value || "";
   const match = galleryMatchCatalog(profile).find((m) => m.macId === macId);
@@ -2604,6 +2637,7 @@ async function handleGalleryUpload(fileList) {
 }
 
 async function removeGalleryItem(id) {
+  if (!isAdmin()) return;
   const item = (profile.gallery || []).find((g) => g.id === id);
   if (!item) return;
   if (item.blobKey && window.SahaGalleryStore) await window.SahaGalleryStore.remove(item.blobKey);
@@ -2661,6 +2695,7 @@ function editorHTML() {
         ${field("f-idol", "Örnek aldığı oyuncu", profile.idol, "wide")}
         ${field("f-youtube", "YouTube", profile.youtube, "wide")}
         ${field("f-instagram", "Instagram", profile.instagram, "wide")}
+        ${field("f-admin-pin", "Yönetim kodu (URL ?yonetim=)", profile.adminPin || DEFAULT.adminPin || "", "wide")}
       </div>
       <h2>TFF</h2>
       <div class="form-grid">
@@ -2751,7 +2786,8 @@ function menuHTML() {
   return `<nav class="menu${isHome ? " menu-drawer" : ""}" aria-label="Menü">
     <div class="menu-top"><button type="button" class="textbtn" data-action="close-menu">Kapat</button></div>
     ${links}
-    <button type="button" class="textbtn" data-action="edit">Düzenle</button>
+    ${isAdmin() ? '<button type="button" class="textbtn" data-action="edit">Düzenle</button>' : ""}
+    ${isAdmin() ? '<button type="button" class="textbtn" data-action="admin-off">Yönetimi kapat</button>' : ""}
   </nav>`;
 }
 
@@ -2780,6 +2816,7 @@ function renderPage() {
     window.scrollTo(0, 0);
   }
   document.body.classList.toggle("gallery-lightbox-open", Boolean(galleryLightboxId));
+  document.body.classList.toggle("is-admin", isAdmin());
   if (page === "projeler") void hydrateGallery();
 }
 
@@ -2817,6 +2854,7 @@ function readForm(useFallback = false) {
     idol: value("f-idol"),
     youtube: value("f-youtube"),
     instagram: value("f-instagram"),
+    adminPin: value("f-admin-pin"),
     tff: {
       profileUrl: value("f-tff-url"),
       licenseNo: value("f-tff-license"),
@@ -2995,6 +3033,10 @@ document.body.addEventListener("click", (event) => {
   } else if (action === "gallery-remove") {
     const id = target.dataset.id;
     if (id && window.confirm("Bu medya silinsin mi?")) void removeGalleryItem(id);
+  } else if (action === "admin-off") {
+    adminOff();
+    menuOpen = false;
+    syncChrome();
   }
 });
 
@@ -3065,5 +3107,6 @@ window.addEventListener("hashchange", () => {
 });
 
 profile = load();
+tryAdminUnlockFromUrl();
 renderPage();
 syncChrome();

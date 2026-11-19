@@ -2437,3 +2437,38 @@ body.is-home .menu.menu-drawer a {
 body.gallery-lightbox-open {
   overflow: hidden;
 }
+
+.article-gallery .lede {
+  max-width: 42rem;
+  margin-bottom: 1.25rem;
+}
+
+.article-gallery .gallery-toolbar-public {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.article-gallery .gallery-grid {
+  clear: both;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.article-gallery .gallery-card {
+  background: color-mix(in srgb, var(--ice) 4%, transparent);
+}
+
+.article-gallery .gallery-open {
+  aspect-ratio: 1;
+  border-radius: 10px;
+}
+
+.article-gallery .gallery-thumb-img,
+.article-gallery .gallery-thumb-video {
+  object-fit: cover;
+}
+
+body:not(.is-admin) .admin-only {
+  display: none !important;
+}
