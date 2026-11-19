@@ -1104,26 +1104,60 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   font-family: var(--sans);
 }
 
-.chart-bar-xg {
-  fill: color-mix(in srgb, var(--lime) 78%, #1a2818);
-}
-
-.chart-bar-capacity {
-  fill: color-mix(in srgb, var(--ice) 22%, transparent);
-  stroke: color-mix(in srgb, var(--ice) 45%, transparent);
+.chart-bar {
+  stroke: color-mix(in srgb, #0a0f0a 55%, transparent);
   stroke-width: 1;
 }
 
+.chart-bar-matches {
+  fill: color-mix(in srgb, var(--lime) 96%, white);
+  stroke: color-mix(in srgb, var(--lime) 50%, #142018);
+}
+
+.chart-bar-goals {
+  fill: color-mix(in srgb, var(--ice) 92%, #6b8fc7);
+  stroke: color-mix(in srgb, var(--ice) 55%, #1a2840);
+}
+
+.chart-bar-tff {
+  fill: color-mix(in srgb, #8ec5ff 75%, #2a5080);
+  stroke: color-mix(in srgb, #6aa8e8 60%, #142018);
+}
+
+.chart-bar-yellow {
+  fill: #f0d24a;
+  stroke: #4a4010;
+}
+
+.chart-bar-red {
+  fill: #ff7070;
+  stroke: #4a1818;
+}
+
+.chart-bar-xg {
+  fill: color-mix(in srgb, var(--lime) 82%, #3a5020);
+  stroke: color-mix(in srgb, var(--lime) 40%, #142018);
+}
+
+.chart-bar-capacity {
+  fill: color-mix(in srgb, var(--ice) 38%, #2a3548);
+  stroke: color-mix(in srgb, var(--ice) 70%, #8899bb);
+  stroke-width: 1.25;
+}
+
 .chart-bar-actual {
-  fill: color-mix(in srgb, var(--lime) 70%, #142018);
+  fill: color-mix(in srgb, var(--lime) 88%, white);
+  stroke: color-mix(in srgb, var(--lime) 45%, #142018);
 }
 
 .chart-bar-starts {
-  fill: color-mix(in srgb, var(--lime) 65%, #142018);
+  fill: color-mix(in srgb, var(--lime) 90%, white);
+  stroke: color-mix(in srgb, var(--lime) 45%, #142018);
 }
 
 .chart-bar-subs {
-  fill: color-mix(in srgb, var(--ice) 55%, #142018);
+  fill: color-mix(in srgb, var(--ice) 72%, #4a6088);
+  stroke: color-mix(in srgb, var(--ice) 50%, #1a2840);
 }
 
 .chart-swatch-capacity {
@@ -1141,6 +1175,16 @@ body.is-home.scene-kisi .hint { opacity: 1; }
 
 .chart-swatch-subs {
   background: color-mix(in srgb, var(--ice) 55%, #1a2818);
+}
+
+.chart-swatch-matches {
+  background: color-mix(in srgb, var(--lime) 96%, white);
+  border: 1px solid color-mix(in srgb, var(--lime) 40%, #142018);
+}
+
+.chart-swatch-goals-bar {
+  background: color-mix(in srgb, var(--ice) 92%, #6b8fc7);
+  border: 1px solid color-mix(in srgb, var(--ice) 50%, #1a2840);
 }
 
 .chart-dot-goals {

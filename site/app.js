@@ -1804,6 +1804,13 @@ function careerRoleMinutes(person) {
   return { ilk11, yedek, total: ilk11 + yedek };
 }
 
+const CHART_BAR_MIN_PX = 7;
+
+function chartScaledBarHeight(value, cap, innerH, minPx = CHART_BAR_MIN_PX) {
+  if (!(value > 0)) return 0;
+  return Math.max((value / cap) * innerH, minPx);
+}
+
 function chartGridHTML(cap, padL, padR, padT, innerH, w) {
   return [0, 0.25, 0.5, 0.75, 1]
     .map((t) => {
@@ -1838,23 +1845,23 @@ function dualSeasonBarChartHTML(series, opts) {
   const innerW = w - padL - padR;
   const innerH = h - padT - padB;
   const slot = innerW / series.length;
-  const barW = Math.min(16, (slot - groupGap) / 2.2);
+  const barW = Math.min(18, (slot - groupGap) / 2.1);
   const gridLines = chartGridHTML(cap, padL, padR, padT, innerH, w);
   const bars = series
     .map((d, i) => {
       const cx = padL + slot * i + slot / 2;
       const aVal = valueA(d);
       const bVal = valueB(d);
-      const aH = (aVal / cap) * innerH;
-      const bH = (bVal / cap) * innerH;
+      const aH = chartScaledBarHeight(aVal, cap, innerH);
+      const bH = chartScaledBarHeight(bVal, cap, innerH);
       const xA = cx - barW - groupGap / 2;
       const xB = cx + groupGap / 2;
       const title = `${d.label}: ${formatVal(aVal)} / ${formatVal(bVal)}`;
       return `<g class="chart-bar-group">
-        <rect class="chart-bar ${classA}" x="${xA}" y="${padT + innerH - aH}" width="${barW}" height="${Math.max(aH, 0.5)}" rx="2">
+        <rect class="chart-bar ${classA}" x="${xA}" y="${padT + innerH - aH}" width="${barW}" height="${aH}" rx="3">
           <title>${esc(title)}</title>
         </rect>
-        <rect class="chart-bar ${classB}" x="${xB}" y="${padT + innerH - bH}" width="${barW}" height="${Math.max(bH, 0.5)}" rx="2">
+        <rect class="chart-bar ${classB}" x="${xB}" y="${padT + innerH - bH}" width="${barW}" height="${bH}" rx="3">
           <title>${esc(title)}</title>
         </rect>
         <text x="${cx}" y="${h - padB + 16}" class="chart-label-season" text-anchor="middle">${esc(d.label)}</text>
@@ -1888,15 +1895,15 @@ function xgTrendChartHTML(series) {
   const bars = series
     .map((d, i) => {
       const cx = padL + slot * i + slot / 2;
-      const xgH = (d.xg / cap) * innerH;
-      const goalH = (d.goals / cap) * innerH;
+      const xgH = chartScaledBarHeight(d.xg, cap, innerH);
+      const goalH = chartScaledBarHeight(d.goals, cap, innerH, 4);
       const x = cx - barW / 2;
       const title = `${d.label}: xG ${d.xg.toFixed(2)}, gol ${d.goals}`;
       return `<g class="chart-bar-group">
-        <rect class="chart-bar chart-bar-xg" x="${x}" y="${padT + innerH - xgH}" width="${barW}" height="${Math.max(xgH, 0.5)}" rx="3">
+        <rect class="chart-bar chart-bar-xg" x="${x}" y="${padT + innerH - xgH}" width="${barW}" height="${xgH}" rx="3">
           <title>${esc(title)}</title>
         </rect>
-        <circle class="chart-dot-goals" cx="${cx}" cy="${padT + innerH - goalH}" r="4.5"><title>${esc(title)}</title></circle>
+        <circle class="chart-dot-goals" cx="${cx}" cy="${padT + innerH - goalH}" r="5.5"><title>${esc(title)}</title></circle>
         <text x="${cx}" y="${h - padB + 16}" class="chart-label-season" text-anchor="middle">${esc(d.label)}</text>
       </g>`;
     })
@@ -1972,10 +1979,10 @@ function singleSeasonBarChartHTML(series, opts) {
   const bars = series
     .map((d, i) => {
       const v = value(d);
-      const bh = (v / cap) * innerH;
+      const bh = chartScaledBarHeight(v, cap, innerH);
       const cx = padL + slot * i + slot / 2;
       const x = cx - barW / 2;
-      return `<rect class="chart-bar ${barClass}" x="${x}" y="${padT + innerH - bh}" width="${barW}" height="${Math.max(bh, 0.5)}" rx="2">
+      return `<rect class="chart-bar ${barClass}" x="${x}" y="${padT + innerH - bh}" width="${barW}" height="${bh}" rx="3">
         <title>${esc(d.label)}: ${esc(formatVal(v))}</title>
       </rect>
       <text x="${cx}" y="${h - padB + 16}" class="chart-label-season" text-anchor="middle">${esc(d.label)}</text>`;
@@ -2016,12 +2023,12 @@ function signedGoalDeltaChartHTML(series) {
   const bars = series
     .map((d, i) => {
       const v = d.goalDelta;
-      const hBar = (Math.abs(v) / cap) * (innerH / 2);
+      const hBar = v !== 0 ? Math.max((Math.abs(v) / cap) * (innerH / 2), CHART_BAR_MIN_PX) : 0;
       const cx = padL + slot * i + slot / 2;
       const x = cx - barW / 2;
       const y = v >= 0 ? zeroY - hBar : zeroY;
       const klass = v >= 0 ? "chart-bar-actual" : "chart-bar-subs";
-      return `<rect class="chart-bar ${klass}" x="${x}" y="${y}" width="${barW}" height="${Math.max(hBar, 0.5)}" rx="2">
+      return `<rect class="chart-bar ${klass}" x="${x}" y="${y}" width="${barW}" height="${hBar}" rx="3">
         <title>${esc(d.label)}: ${v >= 0 ? "+" : ""}${v.toFixed(2)}</title>
       </rect>
       <text x="${cx}" y="${h - padB + 16}" class="chart-label-season" text-anchor="middle">${esc(d.label)}</text>`;
@@ -2093,17 +2100,17 @@ function ageGroupBarChartHTML(ageSeries) {
   const bars = ageSeries
     .map((d, i) => {
       const y = padT + i * rowH + 8;
-      const gw = (d.goals / cap) * innerW * 0.45;
-      const mw = (d.matches / cap) * innerW * 0.45;
+      const gw = d.goals > 0 ? Math.max((d.goals / cap) * innerW * 0.45, 14) : 0;
+      const mw = d.matches > 0 ? Math.max((d.matches / cap) * innerW * 0.45, 14) : 0;
       return `<text x="${padL - 10}" y="${y + 14}" class="chart-label-season" text-anchor="end">${esc(d.label)}</text>
-      <rect class="chart-bar chart-bar-xg" x="${padL}" y="${y}" width="${Math.max(gw, 1)}" height="12" rx="2"/>
-      <rect class="chart-bar chart-bar-starts" x="${padL + innerW * 0.5}" y="${y}" width="${Math.max(mw, 1)}" height="12" rx="2"/>
+      <rect class="chart-bar chart-bar-goals" x="${padL}" y="${y}" width="${gw}" height="14" rx="2"/>
+      <rect class="chart-bar chart-bar-matches" x="${padL + innerW * 0.5}" y="${y}" width="${mw}" height="14" rx="2"/>
       <title>${esc(d.label)}: ${d.goals} gol, ${d.matches} maç</title>`;
     })
     .join("");
   return `<div class="chart-legend" aria-hidden="true">
-    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-xg"></span> Gol</span>
-    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-starts"></span> Maç</span>
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-goals-bar"></span> Gol</span>
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-matches"></span> Maç</span>
   </div>
   <div class="chart-scroll" tabindex="0"><svg class="stats-chart" viewBox="0 0 ${w} ${h}" role="img">${bars}</svg></div>`;
 }
@@ -2111,14 +2118,18 @@ function ageGroupBarChartHTML(ageSeries) {
 function monthlyActivityChartHTML(monthly) {
   const slice = monthly.slice(-18);
   if (!slice.length) return `<p class="empty">Aylık veri yok.</p>`;
-  return dualSeasonBarChartHTML(slice, {
+  const legend = `<div class="chart-legend" aria-hidden="true">
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-matches"></span> Maç</span>
+    <span class="chart-legend-item"><span class="chart-swatch chart-swatch-goals-bar"></span> Gol</span>
+  </div>`;
+  return `${legend}${dualSeasonBarChartHTML(slice, {
     ariaLabel: "Aylık maç ve gol",
     valueA: (d) => d.matches,
     valueB: (d) => d.goals,
-    classA: "chart-bar-starts",
-    classB: "chart-bar-xg",
+    classA: "chart-bar-matches",
+    classB: "chart-bar-goals",
     formatVal: (n) => String(n)
-  });
+  })}`;
 }
 
 function roleDonutChartHTML(role) {
@@ -2196,16 +2207,16 @@ function statsChartsPanelHTML(person) {
       ariaLabel: "ASKF ve TFF maç",
       valueA: (d) => d.askfMatches,
       valueB: (d) => d.tffMatches,
-      classA: "chart-bar-starts",
-      classB: "chart-bar-xg",
+      classA: "chart-bar-matches",
+      classB: "chart-bar-tff",
       formatVal: (n) => String(n)
     }))}
     ${chartCard("ASKF · TFF gol", "Resmi gelişim ve amatör gol toplamı.", dualSeasonBarChartHTML(series, {
       ariaLabel: "ASKF ve TFF gol",
       valueA: (d) => d.askfGoals,
       valueB: (d) => d.tffGoals,
-      classA: "chart-bar-actual",
-      classB: "chart-bar-xg",
+      classA: "chart-bar-matches",
+      classB: "chart-bar-goals",
       formatVal: (n) => String(n)
     }))}
     ${chartCard("İç · dış saha maç", "Maç sayısı (ev/deplasman).", dualSeasonBarChartHTML(series, {
@@ -2220,16 +2231,16 @@ function statsChartsPanelHTML(person) {
       ariaLabel: "İç dış saha gol",
       valueA: (d) => d.homeGoals,
       valueB: (d) => d.awayGoals,
-      classA: "chart-bar-actual",
-      classB: "chart-bar-xg",
+      classA: "chart-bar-matches",
+      classB: "chart-bar-goals",
       formatVal: (n) => String(n)
     }))}
     ${chartCard("Disiplin", "Sarı ve kırmızı kart — ASKF.", dualSeasonBarChartHTML(series, {
       ariaLabel: "Kartlar",
       valueA: (d) => d.yellow,
       valueB: (d) => d.red,
-      classA: "chart-bar-xg",
-      classB: "chart-bar-subs",
+      classA: "chart-bar-yellow",
+      classB: "chart-bar-red",
       formatVal: (n) => String(n)
     }))}
     ${chartCard("Kart sıklığı", "Kart ÷ maç (sezon).", singleSeasonBarChartHTML(series, {
