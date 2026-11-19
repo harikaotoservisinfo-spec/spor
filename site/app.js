@@ -2,7 +2,7 @@ const KEY = "kuzey-akinci-profile-v1";
 const CHAPTERS = [
   { id: "kisi", index: "01", title: "Kişi", kicker: "Önce insan", line: "Formadan önce gelen taraf." },
   { id: "futbolcu", index: "02", title: "Futbolcu", kicker: "Sahada", line: "Numara, mevki, oyun fikri." },
-  { id: "kupalar", index: "03", title: "Kupalar", kicker: "Kazanılanlar", line: "Asılan her şey burada durur." },
+  { id: "istatistikler", index: "03", title: "İstatistikler", kicker: "Rakamlar", line: "Sezon, maç ve sahaya yansıyan sayılar." },
   { id: "elci", index: "04", title: "Elçi", kicker: "Duruş", line: "Oyunun içinde nasıl durduğu." },
   { id: "projeler", index: "05", title: "Projeler", kicker: "Kurulanlar", line: "Bitmemiş, başlamış işler." }
 ];
@@ -27,6 +27,7 @@ const SPOTS = [
 const ROW_FIELDS = {
   facts: ["label", "value"],
   stats: ["label", "value"],
+  gameStats: ["label", "value"],
   honours: ["year", "title", "detail"],
   values: ["title", "text"],
   dreams: ["title", "text"],
@@ -129,11 +130,12 @@ function cleanPhotos(list, max = 24) {
     const file = String(item?.file ?? "").trim();
     if (!PHOTO_PATH.test(file)) return null;
     let chapter = cleanLine(item?.chapter, 20).toLocaleLowerCase("tr");
+    if (chapter === "kupalar") chapter = "istatistikler";
     if (!CHAPTERS.some((ch) => ch.id === chapter)) {
       if (file.includes("portre")) chapter = "kisi";
       else if (file.includes("futbolcu")) chapter = "futbolcu";
       else if (file.includes("projeler")) chapter = "projeler";
-      else if (file.includes("kupalar")) chapter = "kupalar";
+      else if (file.includes("kupalar") || file.includes("istatistik")) chapter = "istatistikler";
       else if (file.includes("elci")) chapter = "elci";
       else chapter = "";
     }
@@ -161,7 +163,7 @@ function chapterPhoto(person, id) {
   const photos = person.photos || [];
   const hit = photos.find((photo) => photo.chapter === id);
   if (hit) return hit;
-  const index = { kisi: 0, futbolcu: 1, kupalar: 2, elci: 3, projeler: 4 }[id];
+  const index = { kisi: 0, futbolcu: 1, istatistikler: 2, kupalar: 2, elci: 3, projeler: 4 }[id];
   if (index !== undefined && photos[index]) return photos[index];
   return null;
 }
@@ -285,6 +287,7 @@ function sanitize(data, useFallback = true) {
     futbolBlocks: mergeStoryBlocks(cleanPersonaBlocks(source.futbolBlocks), "futbolBlocks"),
     facts: mergeFacts(cleanList(source.facts, ["label", "value"], { label: 40, value: 80 })),
     stats: mergeStats(cleanList(source.stats, ["label", "value"], { label: 40, value: 80 })),
+    gameStats: cleanList(source.gameStats, ["label", "value"], { label: 40, value: 80 }),
     honours: cleanList(source.honours, ["year", "title", "detail"], { year: 12, title: 60, detail: 180 }),
     values: cleanList(source.values, ["title", "text"], { title: 40, text: 240 }),
     dreams: cleanList(source.dreams, ["title", "text"], { title: 40, text: 240 })
@@ -337,7 +340,8 @@ function richText(value) {
 }
 
 function route() {
-  const id = decodeURIComponent(location.hash.replace(/^#/, ""));
+  const raw = decodeURIComponent(location.hash.replace(/^#/, ""));
+  const id = raw === "kupalar" ? "istatistikler" : raw;
   return CHAPTERS.some((chapter) => chapter.id === id) ? id : "home";
 }
 
@@ -670,22 +674,28 @@ function renderFutbolcu() {
   `, "article-persona article-futbolcu");
 }
 
-function renderKupalar() {
-  const trophy = chapterPhoto(profile, "kupalar");
-  const lead = trophy ? `<div class="article-photo">${photoFigure(trophy, "portrait hero cup-shot")}</div>` : "";
-  const body = profile.honours.length
-    ? `<div class="cups">${profile.honours.map((honour) => `<article class="cup">
-        ${cupSVG()}
-        ${honour.year ? `<em>${esc(honour.year)}</em>` : ""}
-        <strong>${esc(honour.title)}</strong>
-        ${honour.detail ? `<p>${esc(honour.detail)}</p>` : ""}
-      </article>`).join("")}</div>`
-    : `<div class="ghost">
-        ${cupSVG()}
-        <p class="lede">Kupa, madalya ya da bir teşekkür. İlki asılınca duvar dolmaya başlar.</p>
-        <p><button type="button" class="textbtn" data-action="edit" data-focus="add-honours">Kupa ekle</button></p>
-      </div>`;
-  return chapterFrame(CHAPTERS[2], `${lead}${body}`);
+function renderIstatistikler() {
+  const visual = chapterPhoto(profile, "istatistikler");
+  const heroBand = visual
+    ? `<div class="persona-hero persona-hero-cup" style="--persona-hero:url('${esc(visual.file)}')" role="img" aria-label="${esc(visual.alt)}"></div>`
+    : "";
+  const table = profile.gameStats.length
+    ? `<div class="stats stats-wide">${profile.gameStats.map((stat) => `<div class="stat"><span>${esc(stat.label)}</span><strong>${esc(stat.value)}</strong></div>`).join("")}</div>`
+    : `<p class="empty">Maç ve sezon rakamları henüz yazılmadı.</p><p><button type="button" class="textbtn" data-action="edit" data-focus="add-game-stats">İstatistik ekle</button></p>`;
+  return chapterFrame(CHAPTERS[2], `
+    ${heroBand}
+    <div class="persona-sheet">
+      <p class="persona-lede">Topladığı, oynadığı ve ürettiği — sayıya dökülen kısım burası.</p>
+      <section class="group">
+        <h2>Sezon</h2>
+        ${table}
+      </section>
+      <section class="group">
+        <h2>Özet kartlar</h2>
+        ${factsHTML(profile.stats)}
+      </section>
+    </div>
+  `, "article-persona article-stats");
 }
 
 function renderElci() {
@@ -712,7 +722,7 @@ function renderProjeler() {
 const PAGES = {
   kisi: renderKisi,
   futbolcu: renderFutbolcu,
-  kupalar: renderKupalar,
+  istatistikler: renderIstatistikler,
   elci: renderElci,
   projeler: renderProjeler
 };
@@ -786,16 +796,18 @@ function editorHTML() {
       <p class="empty">Dosyalar site klasöründeki <code>photos/</code> içinden gelir. Burada alt yazı ve açıklama yazılır.</p>
       ${rowsHTML("photos", profile.photos)}
       <h2>Futbolcu sayfası</h2>
-      <p class="empty">Çisem Spor, mevki yolculuğu ve hız bölümleri. chapter alanı: kisi, futbolcu, kupalar, elci, projeler.</p>
+      <p class="empty">Çisem Spor, mevki yolculuğu ve hız bölümleri. chapter alanı: kisi, futbolcu, istatistikler, elci, projeler.</p>
       ${rowsHTML("futbolBlocks", profile.futbolBlocks || [])}
       <h2>Kişi sayfası</h2>
-      <p class="empty">Ramos sitesindeki gibi Kök, Aile, Öğrenim bölümleri. Bölüm fotoğrafı için chapter alanına kisi, futbolcu, kupalar, elci veya projeler yazın.</p>
+      <p class="empty">Ramos sitesindeki gibi Kök, Aile, Öğrenim bölümleri. Bölüm fotoğrafı için chapter alanına kisi, futbolcu, istatistikler, elci veya projeler yazın.</p>
       ${rowsHTML("personaBlocks", profile.personaBlocks)}
       <h2>Kartlar</h2>
       ${rowsHTML("facts", profile.facts)}
       <h2>Rakamlar</h2>
       ${rowsHTML("stats", profile.stats)}
-      <h2>Kupalar</h2>
+      <h2>Sezon istatistikleri</h2>
+      ${rowsHTML("gameStats", profile.gameStats || [])}
+      <h2>Kupalar ve ödüller</h2>
       ${rowsHTML("honours", profile.honours)}
       <h2>Duruş</h2>
       ${rowsHTML("values", profile.values)}
@@ -903,6 +915,7 @@ function readForm(useFallback = false) {
     personaBlocks: readRows("personaBlocks"),
     futbolBlocks: readRows("futbolBlocks"),
     facts: readRows("facts"),
+    gameStats: readRows("gameStats"),
     stats: readRows("stats"),
     honours: readRows("honours"),
     values: readRows("values"),
@@ -944,7 +957,9 @@ function openEditor(focusId) {
   editorOpen = true;
   menuOpen = false;
   syncChrome();
-  const target = focusId ? document.getElementById(focusId) : document.getElementById("f-first");
+  const focusIdMap = { "add-game-stats": "add-gameStats", "add-stats": "add-stats", "add-honours": "add-honours" };
+  const targetId = focusIdMap[focusId] || focusId;
+  const target = targetId ? document.getElementById(targetId) : document.getElementById("f-first");
   target?.scrollIntoView({ block: "center" });
   target?.focus();
 }

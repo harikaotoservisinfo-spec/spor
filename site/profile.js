@@ -38,7 +38,7 @@ window.SAHA_DEFAULT = {
     },
     {
       file: "photos/kuzey-kupalar.jpg",
-      chapter: "kupalar",
+      chapter: "istatistikler",
       alt: "Kuzey Akıncı, sarı-siyah formayla topun üzerinde",
       caption: "Forma günü"
     },
@@ -112,10 +112,11 @@ window.SAHA_DEFAULT = {
     {
       title: "Hız ve gelişim",
       text: "Kısa mesafede çok hızlı. Sprinter yapısı, topu kazandığı anda baskıyı geride bırakmasını sağlar. Hız tek başına yetmez diye öğreniyor; pas, orta ve son pasla birleşince tam silahına dönüşüyor. Her geçen gün üstüne koyuyor.",
-      chapter: "kupalar",
+      chapter: "istatistikler",
       align: "left"
     }
   ],
+  gameStats: [],
   honours: [],
   values: [
     {

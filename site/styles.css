@@ -870,8 +870,17 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   background-position: 50% 35%;
 }
 
-.bg-slide[data-bg="kupalar"] .bg-ken {
+.bg-slide[data-bg="kupalar"] .bg-ken,
+.bg-slide[data-bg="istatistikler"] .bg-ken {
   background-position: 50% 18%;
+}
+
+.persona-hero-cup {
+  background-position: center 18%;
+}
+
+.stats-wide {
+  margin-top: 0.4rem;
 }
 
 .bg-slide[data-bg="elci"] .bg-ken {
