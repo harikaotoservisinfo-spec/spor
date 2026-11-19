@@ -1,58 +1,46 @@
-# kuzeyakinci.site — canlı yayın (GitHub Pages)
+# kuzeyakinci.site — canlı yayın (VPS)
 
-Site dosyaları `site/` klasöründedir. `main` branch’e push edildiğinde GitHub Actions otomatik yayınlar.
+Site statik dosyaları `site/` klasöründedir. **Canlı sunucu:** `37.230.105.99` (srv.winlrt.com.tr, nginx).
 
-## 1. GitHub (tek sefer)
+Dosya yolu sunucuda: `/var/www/kuzeyakinci.site`  
+Nginx site config: `/etc/nginx/sites-available/kuzeyakinci.site.conf`  
+(winlrt.com.tr ve diğer sitelere dokunulmaz.)
 
-1. Repo: https://github.com/harikaotoservisinfo-spec/spor  
-2. **Settings → Pages**  
-   - **Build and deployment → Source:** `Deploy from a branch`  
-   - **Branch:** `gh-pages` → klasör `/ (root)` → **Save**  
-3. **Custom domain:** `kuzeyakinci.site`  
-4. DNS yayıldıktan sonra **Enforce HTTPS**’i açın.
+Güncelleme (SSH anahtarınızla):
 
-İlk deploy merge sonrası otomatik çalışır; başarısızsa **Actions → Publish kuzeyakinci.site → Run workflow** ile yeniden çalıştırın.
+```bash
+./deploy/scripts/vps-sync-kuzeyakinci.sh
+```
 
-## 2. isimtescil.net DNS (5781862 — kuzeyakinci.site)
+## 1. isimtescil.net DNS (5781862)
 
-Panel: **Gelişmiş DNS** / mevcut kayıtlar.
+Şu an panelde **GitHub** IP’leri ve eski `93.89.226.17` var — VPS için hepsini kaldırın.
 
-### Kaldırın veya değiştirin
+| Yapılacak | Kayıt | Tip | Değer |
+|-----------|--------|-----|--------|
+| **Sil** | `kuzeyakinci.site` | A | `93.89.226.17` |
+| **Sil** | `kuzeyakinci.site` | A | `185.199.108.153` (ve diğer 3 GitHub A kaydı) |
+| **Ekle** | `kuzeyakinci.site` | A | **`37.230.105.99`** |
 
-| Kayıt | Şu an | Yapılacak |
-|--------|--------|-----------|
-| `kuzeyakinci.site` | **A** → `93.89.226.17` | **Silin** (eski hosting) |
+**www:** `CNAME` → `kuzeyakinci.site` (mevcut kayıt uygun).
 
-### Ekleyin — kök alan adı (4 A kaydı)
+**NS** satırlarına dokunmayın.
 
-GitHub Pages için aynı host adına **dört** A kaydı:
+DNS yayıldıktan sonra sunucuda (root SSH):
 
-| Kayıt adı | Tip | Değer |
-|-----------|-----|--------|
-| `kuzeyakinci.site` (veya `@`) | A | `185.199.108.153` |
-| `kuzeyakinci.site` | A | `185.199.109.153` |
-| `kuzeyakinci.site` | A | `185.199.110.153` |
-| `kuzeyakinci.site` | A | `185.199.111.153` |
+```bash
+certbot --nginx -d kuzeyakinci.site -d www.kuzeyakinci.site
+```
 
-### www
+## 2. GitHub Pages (isteğe bağlı)
 
-Mevcut **CNAME** `www` → `kuzeyakinci.site` kalabilir.  
-Alternatif: `www` → `harikaotoservisinfo-spec.github.io` (GitHub önerisi).
+Repo’da `gh-pages` yedeği duruyor; alan adını VPS’e yönlendirdiğinizde **GitHub Custom domain kullanmayın**.
 
-**NS** kayıtları (`tr/eu/us.dnsenable.com`) genelde olduğu gibi kalır.
+## 3. Cursor (kisisel-saha)
 
-## 3. Cursor uygulaması (kisisel-saha)
-
-`https://kisisel-saha.apps.grok.bot` Cursor’da barındırılır; **özel alan adı bu adrese bağlanmıyor** (Cursor dokümantasyonu).
-
-- **kuzeyakinci.site** → herkese açık statik site (GitHub Pages)  
-- **kisisel-saha** → Cursor’da önizleme / özel yayın; isterseniz **Public** yapıp link paylaşmaya devam edebilirsiniz.
+`https://kisisel-saha.apps.grok.bot` — önizleme; özel domain buraya bağlanmaz.
 
 ## 4. Kontrol
 
-DNS 15 dk–48 saat sürebilir. Sonra:
-
-- https://kuzeyakinci.site  
-- https://www.kuzeyakinci.site  
-
-GitHub **Settings → Pages** altında yeşil “DNS check successful” görünmeli.
+- http://37.230.105.99/ (Host: kuzeyakinci.site) — sunucuda 200 OK  
+- DNS sonrası: https://kuzeyakinci.site
