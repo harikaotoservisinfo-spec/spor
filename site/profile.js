@@ -88,13 +88,33 @@ window.SAHA_DEFAULT = {
       align: "right"
     }
   ],
+  tff: {
+    profileUrl: "https://www.tff.org/Default.aspx?pageId=30&kisiID=2298896",
+    kisiId: "2298896",
+    licenseNo: "2049878",
+    club: "ÇİSEM SPOR GENÇLİK VE SPOR"
+  },
+  seasons: [
+    {
+      id: "2025-26",
+      label: "2025–26",
+      competition: "U15 Gelişim Ligi",
+      played: "25",
+      goals: "12",
+      wins: "17",
+      draws: "2",
+      losses: "6"
+    }
+  ],
+  matches: typeof window.SAHA_MATCHES_2025_26 !== "undefined" ? window.SAHA_MATCHES_2025_26 : [],
   stats: [
     { label: "Ana mevki", value: "Sağ kanat" },
     { label: "Forma", value: "9" },
     { label: "Kulüp", value: "Çisem Spor" },
     { label: "Doğal ayak", value: "Sol (solak)" },
     { label: "Sahada", value: "Sağ ayak" },
-    { label: "Profil", value: "Sprinter" }
+    { label: "Profil", value: "Sprinter" },
+    { label: "TFF lisans", value: "2049878" }
   ],
   futbolBlocks: [
     {
@@ -116,7 +136,12 @@ window.SAHA_DEFAULT = {
       align: "left"
     }
   ],
-  gameStats: [],
+  gameStats: [
+    { label: "Kaynak", value: "TFF resmi profil" },
+    { label: "2025–26 maç", value: "25" },
+    { label: "2025–26 gol", value: "12" },
+    { label: "2025–26 sonuç", value: "17G · 2B · 6M" }
+  ],
   honours: [],
   values: [
     {

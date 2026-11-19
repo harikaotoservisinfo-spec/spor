@@ -28,6 +28,8 @@ const ROW_FIELDS = {
   facts: ["label", "value"],
   stats: ["label", "value"],
   gameStats: ["label", "value"],
+  seasons: ["id", "label", "competition", "played", "goals", "wins", "draws", "losses"],
+  matches: ["season", "date", "time", "home", "away", "score", "competition", "macId"],
   honours: ["year", "title", "detail"],
   values: ["title", "text"],
   dreams: ["title", "text"],
@@ -47,7 +49,21 @@ const PLACEHOLDERS = {
   text: "Cümle",
   file: "photos/dosya.png",
   chapter: "kisi",
-  align: "left"
+  align: "left",
+  id: "2025-26",
+  competition: "U15 Gelişim Ligi",
+  played: "25",
+  goals: "12",
+  wins: "17",
+  draws: "2",
+  losses: "6",
+  season: "2025-26",
+  date: "13.09.2025",
+  time: "13.00",
+  home: "Ev sahibi",
+  away: "Misafir",
+  score: "2-1",
+  macId: "300799"
 };
 
 const DEFAULT = window.SAHA_DEFAULT;
@@ -69,6 +85,20 @@ function esc(value) {
 
 function safeColor(value, fallback) {
   return /^#[0-9a-fA-F]{6}$/.test(String(value || "")) ? String(value) : fallback;
+}
+
+function safeTffUrl(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:") return "";
+    const host = url.hostname.replace(/^www\./i, "").toLowerCase();
+    if (host !== "tff.org") return "";
+    return url.href;
+  } catch {
+    return "";
+  }
 }
 
 function safeSocialUrl(value, kind) {
@@ -240,6 +270,123 @@ function mergeStats(list) {
   return merged;
 }
 
+function mergeGameStats(list) {
+  const defaults = cleanList(DEFAULT.gameStats || [], ["label", "value"], { label: 40, value: 80 });
+  if (!list.length) return defaults;
+  const labels = new Set(list.map((stat) => stat.label));
+  const merged = [...list];
+  defaults.forEach((stat) => {
+    if (stat.label && !labels.has(stat.label)) merged.push(stat);
+  });
+  return merged;
+}
+
+function cleanTff(source, useFallback) {
+  const base = DEFAULT.tff || {};
+  const raw = source?.tff && typeof source.tff === "object" ? source.tff : source;
+  const profileUrl = safeTffUrl(raw?.profileUrl) || (useFallback ? safeTffUrl(base.profileUrl) : "");
+  return {
+    profileUrl,
+    kisiId: cleanLine(raw?.kisiId, 12, useFallback ? base.kisiId || "" : ""),
+    licenseNo: cleanLine(raw?.licenseNo, 16, useFallback ? base.licenseNo || "" : ""),
+    club: cleanLine(raw?.club, 80, useFallback ? base.club || "" : "")
+  };
+}
+
+const MATCH_LIMITS = {
+  season: 12,
+  date: 16,
+  time: 8,
+  home: 80,
+  away: 80,
+  score: 12,
+  competition: 60,
+  macId: 12
+};
+
+const SEASON_LIMITS = {
+  id: 12,
+  label: 20,
+  competition: 60,
+  played: 6,
+  goals: 6,
+  wins: 6,
+  draws: 6,
+  losses: 6
+};
+
+function cleanSeasons(list) {
+  return cleanList(list, ROW_FIELDS.seasons, SEASON_LIMITS, 24);
+}
+
+function cleanMatches(list) {
+  return cleanList(list, ROW_FIELDS.matches, MATCH_LIMITS, 240).map((row) => ({
+    ...row,
+    macId: String(row.macId || "").replace(/\D/g, "").slice(0, 12)
+  })).filter((row) => row.date && row.score && (row.home || row.away));
+}
+
+function mergeSeasons(list) {
+  const defaults = cleanSeasons(DEFAULT.seasons || []);
+  if (!list.length) return defaults;
+  const ids = new Set(list.map((s) => s.id).filter(Boolean));
+  const merged = [...list];
+  defaults.forEach((season) => {
+    if (season.id && !ids.has(season.id)) merged.push(season);
+  });
+  return merged;
+}
+
+function mergeMatches(list) {
+  const defaults = cleanMatches(DEFAULT.matches || []);
+  if (!defaults.length) return cleanMatches(list);
+  if (!list.length) return defaults;
+  const ids = new Set(list.map((m) => m.macId).filter(Boolean));
+  const merged = [...list];
+  defaults.forEach((match) => {
+    if (match.macId && !ids.has(match.macId)) merged.push(match);
+  });
+  return cleanMatches(merged);
+}
+
+function parseMatchDate(value) {
+  const parts = String(value || "").split(".");
+  if (parts.length !== 3) return 0;
+  const day = Number(parts[0]);
+  const month = Number(parts[1]);
+  const year = Number(parts[2]);
+  if (!day || !month || !year) return 0;
+  return Date.UTC(year, month - 1, day);
+}
+
+function clubIsCisem(name) {
+  return String(name || "").toLocaleLowerCase("tr").includes("çisem");
+}
+
+function matchOutcome(home, away, score) {
+  const parts = String(score || "").trim().match(/^(\d+)\s*-\s*(\d+)$/);
+  if (!parts) return "";
+  const homeGoals = Number(parts[1]);
+  const awayGoals = Number(parts[2]);
+  const weHome = clubIsCisem(home);
+  const weAway = clubIsCisem(away);
+  if (!weHome && !weAway) return "";
+  const scored = weHome ? homeGoals : awayGoals;
+  const conceded = weHome ? awayGoals : homeGoals;
+  if (scored > conceded) return "G";
+  if (scored < conceded) return "M";
+  return "B";
+}
+
+function shortClubName(name) {
+  let text = String(name || "").trim();
+  text = text.replace(/\s+GENÇLİK VE SPOR$/i, "");
+  text = text.replace(/\s+SPOR KULÜBÜ$/i, " SK");
+  text = text.replace(/\s+FUTBOL A\.Ş\.$/i, "");
+  text = text.replace(/\s+FUTBOL SPOR KULÜBÜ$/i, "");
+  return text.length > 42 ? `${text.slice(0, 39)}…` : text;
+}
+
 function cleanList(list, keys, limits, max = 12) {
   if (!Array.isArray(list)) return [];
   return list.slice(0, max).map((item) => {
@@ -287,7 +434,10 @@ function sanitize(data, useFallback = true) {
     futbolBlocks: mergeStoryBlocks(cleanPersonaBlocks(source.futbolBlocks), "futbolBlocks"),
     facts: mergeFacts(cleanList(source.facts, ["label", "value"], { label: 40, value: 80 })),
     stats: mergeStats(cleanList(source.stats, ["label", "value"], { label: 40, value: 80 })),
-    gameStats: cleanList(source.gameStats, ["label", "value"], { label: 40, value: 80 }),
+    tff: cleanTff(source, useFallback),
+    seasons: mergeSeasons(cleanSeasons(source.seasons)),
+    matches: mergeMatches(cleanMatches(source.matches)),
+    gameStats: mergeGameStats(cleanList(source.gameStats, ["label", "value"], { label: 40, value: 80 })),
     honours: cleanList(source.honours, ["year", "title", "detail"], { year: 12, title: 60, detail: 180 }),
     values: cleanList(source.values, ["title", "text"], { title: 40, text: 240 }),
     dreams: cleanList(source.dreams, ["title", "text"], { title: 40, text: 240 })
@@ -674,6 +824,87 @@ function renderFutbolcu() {
   `, "article-persona article-futbolcu");
 }
 
+function tffBlockHTML(person) {
+  const tff = person.tff || {};
+  const url = safeTffUrl(tff.profileUrl);
+  if (!url && !tff.licenseNo) return "";
+  const lines = [];
+  if (tff.licenseNo) lines.push(`Lisans no: ${esc(tff.licenseNo)}`);
+  if (tff.club) lines.push(`Kulüp: ${esc(tff.club)}`);
+  if (person.birthPlace) lines.push(`Doğum yeri: ${esc(person.birthPlace)}`);
+  if (person.birthDate) lines.push(`Doğum tarihi: ${esc(person.birthDate)}`);
+  return `<section class="group tff-block">
+    <h2>TFF kaydı</h2>
+    <p class="tff-lede">Resmi federasyon profili — maç ve gol listeleri buradan doğrulanır.</p>
+  ${lines.length ? `<ul class="tff-facts">${lines.map((line) => `<li>${line}</li>`).join("")}</ul>` : ""}
+  ${url ? `<p class="tff-link"><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">TFF oyuncu profili</a></p>` : ""}
+  </section>`;
+}
+
+function seasonSummaryHTML(season) {
+  const chips = [
+    ["Maç", season.played],
+    ["Gol", season.goals],
+    ["G", season.wins],
+    ["B", season.draws],
+    ["M", season.losses]
+  ].filter(([, value]) => value);
+  return `<div class="season-summary">
+    <p class="season-title">${esc(season.label || season.id)} · ${esc(season.competition || "")}</p>
+    ${chips.length ? `<div class="season-chips">${chips.map(([label, value]) => `<span class="season-chip"><em>${esc(label)}</em> ${esc(value)}</span>`).join("")}</div>` : ""}
+  </div>`;
+}
+
+function matchesTableHTML(matches, seasonId) {
+  const rows = matches
+    .filter((m) => !seasonId || m.season === seasonId)
+    .slice()
+    .sort((a, b) => parseMatchDate(b.date) - parseMatchDate(a.date));
+  if (!rows.length) {
+    return `<p class="empty">Bu sezon için maç henüz eklenmedi.</p>`;
+  }
+  const body = rows.map((match) => {
+    const outcome = matchOutcome(match.home, match.away, match.score);
+    const outcomeClass = outcome ? ` result-${outcome === "G" ? "win" : outcome === "M" ? "loss" : "draw"}` : "";
+    const macUrl = match.macId ? `https://www.tff.org/Default.aspx?pageId=29&macId=${encodeURIComponent(match.macId)}` : "";
+    const scoreCell = macUrl
+      ? `<a href="${esc(macUrl)}" target="_blank" rel="noopener noreferrer" class="score-link">${esc(match.score)}</a>`
+      : esc(match.score);
+    const when = [match.date, match.time].filter(Boolean).join(" · ");
+    return `<tr>
+      <td class="match-when">${esc(when)}</td>
+      <td class="match-teams"><span class="${clubIsCisem(match.home) ? "is-us" : ""}">${esc(shortClubName(match.home))}</span>
+        <span class="match-score">${scoreCell}</span>
+        <span class="${clubIsCisem(match.away) ? "is-us" : ""}">${esc(shortClubName(match.away))}</span></td>
+      <td class="match-comp">${esc(match.competition)}</td>
+      <td class="match-result${outcomeClass}" aria-label="Sonuç">${outcome ? esc(outcome) : "—"}</td>
+    </tr>`;
+  }).join("");
+  return `<div class="match-scroll" tabindex="0" aria-label="Maç listesi">
+    <table class="match-table">
+      <thead><tr><th>Tarih</th><th>Maç</th><th>Organizasyon</th><th></th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+  </div>
+  <p class="match-note">Milli maçlar bu listede yer almaz (TFF notu).</p>`;
+}
+
+function seasonsHTML(person) {
+  const seasons = person.seasons || [];
+  const allMatches = person.matches || [];
+  if (!seasons.length && !allMatches.length) {
+    return `<section class="group"><h2>Sezonlar</h2><p class="empty">Sezon özeti ve maç listesi henüz yazılmadı.</p></section>`;
+  }
+  if (!seasons.length) {
+    return `<section class="group"><h2>Maçlar</h2>${matchesTableHTML(allMatches)}</section>`;
+  }
+  return seasons.map((season) => `<section class="group season-block">
+    <h2>${esc(season.label || season.id)}</h2>
+    ${seasonSummaryHTML(season)}
+    ${matchesTableHTML(allMatches, season.id)}
+  </section>`).join("");
+}
+
 function renderIstatistikler() {
   const visual = chapterPhoto(profile, "istatistikler");
   const heroBand = visual
@@ -686,12 +917,14 @@ function renderIstatistikler() {
     ${heroBand}
     <div class="persona-sheet">
       <p class="persona-lede">Topladığı, oynadığı ve ürettiği — sayıya dökülen kısım burası.</p>
+      ${tffBlockHTML(profile)}
       <section class="group">
-        <h2>Sezon</h2>
+        <h2>Özet</h2>
         ${table}
       </section>
+      ${seasonsHTML(profile)}
       <section class="group">
-        <h2>Özet kartlar</h2>
+        <h2>Profil kartları</h2>
         ${factsHTML(profile.stats)}
       </section>
     </div>
@@ -737,7 +970,7 @@ function area(id, label, value) {
 
 function rowHTML(keys, item = {}) {
   const inputs = keys.map((key) => `<input data-k="${key}" placeholder="${esc(PLACEHOLDERS[key] || key)}" value="${esc(item[key] || "")}" maxlength="180">`).join("");
-  const cols = keys.length > 3 ? " cols-4" : keys.length > 2 ? " cols-3" : "";
+  const cols = keys.length > 6 ? " cols-wide" : keys.length > 3 ? " cols-4" : keys.length > 2 ? " cols-3" : "";
   return `<div class="row${cols}">${inputs}<button type="button" data-action="remove-row">Sil</button></div>`;
 }
 
@@ -766,6 +999,13 @@ function editorHTML() {
         ${field("f-idol", "Örnek aldığı oyuncu", profile.idol, "wide")}
         ${field("f-youtube", "YouTube", profile.youtube, "wide")}
         ${field("f-instagram", "Instagram", profile.instagram, "wide")}
+      </div>
+      <h2>TFF</h2>
+      <div class="form-grid">
+        ${field("f-tff-url", "Oyuncu profili URL", profile.tff?.profileUrl || "", "wide")}
+        ${field("f-tff-license", "Lisans no", profile.tff?.licenseNo || "")}
+        ${field("f-tff-kisi", "kisiID", profile.tff?.kisiId || "")}
+        ${field("f-tff-club", "TFF kulüp adı", profile.tff?.club || "", "wide")}
       </div>
       <h2>Saha</h2>
       <div class="form-grid">
@@ -807,6 +1047,12 @@ function editorHTML() {
       ${rowsHTML("stats", profile.stats)}
       <h2>Sezon istatistikleri</h2>
       ${rowsHTML("gameStats", profile.gameStats || [])}
+      <h2>Sezon özetleri</h2>
+      <p class="empty">Her sezon için maç, gol ve G/B/M sayıları. id: 2025-26 gibi.</p>
+      ${rowsHTML("seasons", profile.seasons || [])}
+      <h2>Maç listesi</h2>
+      <p class="empty">TFF’den aktarılan satırlar. macId ile TFF maç sayfasına bağlanır.</p>
+      ${rowsHTML("matches", profile.matches || [])}
       <h2>Kupalar ve ödüller</h2>
       ${rowsHTML("honours", profile.honours)}
       <h2>Duruş</h2>
@@ -897,6 +1143,12 @@ function readForm(useFallback = false) {
     idol: value("f-idol"),
     youtube: value("f-youtube"),
     instagram: value("f-instagram"),
+    tff: {
+      profileUrl: value("f-tff-url"),
+      licenseNo: value("f-tff-license"),
+      kisiId: value("f-tff-kisi"),
+      club: value("f-tff-club")
+    },
     number: value("f-number"),
     position: value("f-position"),
     team: value("f-team"),
@@ -916,6 +1168,8 @@ function readForm(useFallback = false) {
     futbolBlocks: readRows("futbolBlocks"),
     facts: readRows("facts"),
     gameStats: readRows("gameStats"),
+    seasons: readRows("seasons"),
+    matches: readRows("matches"),
     stats: readRows("stats"),
     honours: readRows("honours"),
     values: readRows("values"),
@@ -957,7 +1211,13 @@ function openEditor(focusId) {
   editorOpen = true;
   menuOpen = false;
   syncChrome();
-  const focusIdMap = { "add-game-stats": "add-gameStats", "add-stats": "add-stats", "add-honours": "add-honours" };
+  const focusIdMap = {
+    "add-game-stats": "add-gameStats",
+    "add-stats": "add-stats",
+    "add-honours": "add-honours",
+    "add-seasons": "add-seasons",
+    "add-matches": "add-matches"
+  };
   const targetId = focusIdMap[focusId] || focusId;
   const target = targetId ? document.getElementById(targetId) : document.getElementById("f-first");
   target?.scrollIntoView({ block: "center" });

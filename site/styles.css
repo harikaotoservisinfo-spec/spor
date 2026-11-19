@@ -883,6 +883,142 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   margin-top: 0.4rem;
 }
 
+.tff-block .tff-lede {
+  margin: 0.35rem 0 0.75rem;
+  opacity: 0.88;
+  max-width: 36rem;
+}
+
+.tff-facts {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+}
+
+.tff-link a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+
+.season-summary {
+  margin-bottom: 0.85rem;
+}
+
+.season-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.95rem;
+  opacity: 0.92;
+}
+
+.season-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.65rem;
+}
+
+.season-chip {
+  font-size: 0.82rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 999px;
+}
+
+.season-chip em {
+  font-style: normal;
+  opacity: 0.65;
+  margin-right: 0.25rem;
+}
+
+.match-scroll {
+  overflow-x: auto;
+  margin: 0 -0.25rem;
+  padding-bottom: 0.35rem;
+}
+
+.match-table {
+  width: 100%;
+  min-width: 32rem;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.match-table th,
+.match-table td {
+  text-align: left;
+  padding: 0.45rem 0.35rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  vertical-align: top;
+}
+
+.match-table th {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.match-when {
+  white-space: nowrap;
+  width: 7.5rem;
+}
+
+.match-teams {
+  line-height: 1.35;
+}
+
+.match-teams .match-score {
+  display: inline-block;
+  margin: 0 0.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-teams .is-us {
+  font-weight: 600;
+}
+
+.score-link {
+  color: inherit;
+}
+
+.match-comp {
+  max-width: 9rem;
+  opacity: 0.85;
+}
+
+.match-result {
+  width: 2rem;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-result.result-win {
+  color: #3d8f5a;
+}
+
+.match-result.result-draw {
+  opacity: 0.75;
+}
+
+.match-result.result-loss {
+  color: #c45c4a;
+}
+
+.match-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  opacity: 0.65;
+}
+
+.row.cols-wide {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) repeat(4, minmax(0, 1.2fr)) auto;
+}
+
 .bg-slide[data-bg="elci"] .bg-ken {
   background-position: 50% 40%;
 }
@@ -1272,7 +1408,7 @@ body.is-home .menu.menu-drawer a {
 .noscript { position: relative; z-index: 3; padding: 2rem; }
 
 @media (max-width: 800px) {
-  .layout, .split, .form-grid, .row, .row.cols-3, .row.cols-4 { grid-template-columns: 1fr; }
+  .layout, .split, .form-grid, .row, .row.cols-3, .row.cols-4, .row.cols-wide { grid-template-columns: 1fr; }
   .wide { grid-column: auto; }
   .rail { display: none; }
   .panel { padding: 20vh 7vw 12vh; }

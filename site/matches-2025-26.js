@@ -1,0 +1,28 @@
+/** TFF kaynaklı maç listesi — U15 Gelişim Ligi 2025–26 (kisiID 2298896) */
+window.SAHA_MATCHES_2025_26 = [
+  { season: "2025-26", date: "05.04.2026", time: "13.00", home: "ATAKAŞ HATAYSPOR", away: "ÇİSEM SPOR GENÇLİK VE SPOR", score: "1-0", competition: "U15 Gelişim Ligi Play-Off", macId: "316712" },
+  { season: "2025-26", date: "18.03.2026", time: "13.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "DENİZLİ İDMANYURDU 1959 SPOR KULÜBÜ", score: "1-2", competition: "U15 Gelişim Ligi", macId: "300818" },
+  { season: "2025-26", date: "15.03.2026", time: "13.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "ALANYA 1221 FUTBOL SPOR KULÜBÜ", score: "2-1", competition: "U15 Gelişim Ligi", macId: "300813" },
+  { season: "2025-26", date: "27.02.2026", time: "19.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "HURMA GENÇLİK VE SPOR", score: "8-1", competition: "U15 Gelişim Ligi", macId: "300769" },
+  { season: "2025-26", date: "22.02.2026", time: "16.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "YENİ BURDUR SPOR", score: "7-0", competition: "U15 Gelişim Ligi", macId: "300782" },
+  { season: "2025-26", date: "15.02.2026", time: "15.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "AFYONKARAHİSAR ANADOLU GÜCÜ SPOR", score: "4-1", competition: "U15 Gelişim Ligi", macId: "300779" },
+  { season: "2025-26", date: "08.02.2026", time: "13.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "BUCAK BELEDİYE OĞUZHANSPOR", score: "8-1", competition: "U15 Gelişim Ligi", macId: "300776" },
+  { season: "2025-26", date: "01.02.2026", time: "13.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "BEREKETLİ SPOR", score: "0-2", competition: "U15 Gelişim Ligi", macId: "300724" },
+  { season: "2025-26", date: "25.01.2026", time: "18.30", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "KEPEZ SPOR FUTBOL A.Ş.", score: "1-0", competition: "U15 Gelişim Ligi", macId: "300719" },
+  { season: "2025-26", date: "18.01.2026", time: "13.00", home: "DENİZLİ İDMANYURDU GÜRELLER SPOR KULÜBÜ", away: "ÇİSEM SPOR GENÇLİK VE SPOR", score: "0-0", competition: "U15 Gelişim Ligi", macId: "300714" },
+  { season: "2025-26", date: "11.01.2026", time: "13.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "ALANYA 1221 FUTBOL SPOR KULÜBÜ", score: "5-0", competition: "U15 Gelişim Ligi", macId: "300765" },
+  { season: "2025-26", date: "21.12.2025", time: "18.00", home: "HURMA GENÇLİK VE SPOR", away: "ÇİSEM SPOR GENÇLİK VE SPOR", score: "0-3", competition: "U15 Gelişim Ligi", macId: "300757" },
+  { season: "2025-26", date: "13.12.2025", time: "15.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "YENİ BURDUR SPOR", score: "5-0", competition: "U15 Gelişim Ligi", macId: "300754" },
+  { season: "2025-26", date: "07.12.2025", time: "13.00", home: "AFYONKARAHİSAR ANADOLU GÜCÜ SPOR", away: "ÇİSEM SPOR GENÇLİK VE SPOR", score: "1-5", competition: "U15 Gelişim Ligi", macId: "300751" },
+  { season: "2025-26", date: "30.11.2025", time: "13.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "BUCAK BELEDİYE OĞUZHANSPOR", score: "5-0", competition: "U15 Gelişim Ligi", macId: "300748" },
+  { season: "2025-26", date: "23.11.2025", time: "13.00", home: "BEREKETLİ SPOR", away: "ÇİSEM SPOR GENÇLİK VE SPOR", score: "1-2", competition: "U15 Gelişim Ligi", macId: "300744" },
+  { season: "2025-26", date: "16.11.2025", time: "13.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "KEPEZ SPOR FUTBOL A.Ş.", score: "1-3", competition: "U15 Gelişim Ligi", macId: "300739" },
+  { season: "2025-26", date: "09.11.2025", time: "16.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "DENİZLİ İDMANYURDU GÜRELLER SPOR KULÜBÜ", score: "0-1", competition: "U15 Gelişim Ligi", macId: "300806" },
+  { season: "2025-26", date: "02.11.2025", time: "15.00", home: "ALANYA 1221 FUTBOL SPOR KULÜBÜ", away: "ÇİSEM SPOR GENÇLİK VE SPOR", score: "2-1", competition: "U15 Gelişim Ligi", macId: "300725" },
+  { season: "2025-26", date: "17.10.2025", time: "20.30", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "HURMA GENÇLİK VE SPOR", score: "9-1", competition: "U15 Gelişim Ligi", macId: "300789" },
+  { season: "2025-26", date: "12.10.2025", time: "14.00", home: "YENİ BURDUR SPOR", away: "ÇİSEM SPOR GENÇLİK VE SPOR", score: "0-8", competition: "U15 Gelişim Ligi", macId: "300786" },
+  { season: "2025-26", date: "05.10.2025", time: "13.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "AFYONKARAHİSAR ANADOLU GÜCÜ SPOR", score: "6-0", competition: "U15 Gelişim Ligi", macId: "300735" },
+  { season: "2025-26", date: "28.09.2025", time: "13.00", home: "BUCAK BELEDİYE OĞUZHANSPOR", away: "ÇİSEM SPOR GENÇLİK VE SPOR", score: "1-4", competition: "U15 Gelişim Ligi", macId: "300732" },
+  { season: "2025-26", date: "21.09.2025", time: "14.00", home: "ÇİSEM SPOR GENÇLİK VE SPOR", away: "BEREKETLİ SPOR", score: "3-2", competition: "U15 Gelişim Ligi", macId: "300804" },
+  { season: "2025-26", date: "13.09.2025", time: "13.00", home: "KEPEZ SPOR FUTBOL A.Ş.", away: "ÇİSEM SPOR GENÇLİK VE SPOR", score: "1-1", competition: "U15 Gelişim Ligi", macId: "300799" }
+];
