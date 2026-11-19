@@ -1594,17 +1594,6 @@ function renderFutbolcu() {
         <div class="prose futbol-style">${richText(profile.style)}</div>
       </div>
       ${personaBlocksHTML(profile.futbolBlocks)}
-      <section class="group futbol-play">
-        <h2>Antrenman</h2>
-        <div class="mini">
-          <div class="goal"></div>
-          <div class="ball" id="ball"></div>
-        </div>
-        <div class="shot-row">
-          <button type="button" class="textbtn" data-action="kick">Topa vur</button>
-          <p class="gol" id="gol" aria-live="polite"></p>
-        </div>
-      </section>
     </div>
   `, "article-persona article-futbolcu");
 }
@@ -3706,18 +3695,6 @@ function openEditor(focusId) {
   target?.focus();
 }
 
-function kick() {
-  const ball = document.getElementById("ball");
-  const gol = document.getElementById("gol");
-  if (!ball || ball.classList.contains("is-kicked")) return;
-  ball.classList.add("is-kicked");
-  if (gol) gol.textContent = "Gol.";
-  window.setTimeout(() => {
-    ball.classList.remove("is-kicked");
-    if (gol) gol.textContent = "";
-  }, reducedMotion ? 700 : 1400);
-}
-
 function exportProfile() {
   const data = document.getElementById("profile-form") ? readForm() : profile;
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -3762,8 +3739,6 @@ document.body.addEventListener("click", (event) => {
     openEditor(target.dataset.focus || "");
   } else if (action === "close-editor") {
     closeEditor();
-  } else if (action === "kick") {
-    kick();
   } else if (action === "add-row") {
     const name = target.dataset.rows;
     const box = document.querySelector(`.rows[data-rows="${name}"]`);
