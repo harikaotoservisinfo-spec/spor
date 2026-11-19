@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kuzey Akıncı</title>
+  <meta name="description" content="Kuzey Akıncı. Kişisel saha: kişi, futbolcu, kupalar, elçi ve projeler.">
+  <meta name="theme-color" content="#07110c">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="fonts.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="stage" id="stage" aria-hidden="true">
+    <div class="scene scene-kisi is-on" data-scene="kisi">
+      <svg class="deco star" viewBox="0 0 24 24"><path d="M12 1.2 13.3 9 21 12l-7.7 3L12 22.8 10.7 15 3 12l7.7-3Z"/></svg>
+      <div class="lamp"></div>
+    </div>
+    <div class="scene scene-futbolcu" data-scene="futbolcu">
+      <div class="flood a"></div>
+      <div class="flood b"></div>
+      <svg class="deco pitch-bg" viewBox="0 0 100 130">
+        <rect x="8" y="6" width="84" height="118" fill="none" stroke="currentColor" stroke-width="0.7"/>
+        <line x1="8" y1="65" x2="92" y2="65" stroke="currentColor" stroke-width="0.5"/>
+        <circle cx="50" cy="65" r="12" fill="none" stroke="currentColor" stroke-width="0.5"/>
+        <rect x="28" y="6" width="44" height="18" fill="none" stroke="currentColor" stroke-width="0.5"/>
+        <rect x="28" y="106" width="44" height="18" fill="none" stroke="currentColor" stroke-width="0.5"/>
+      </svg>
+    </div>
+    <div class="scene scene-kupalar" data-scene="kupalar">
+      <svg class="deco cup-bg" viewBox="0 0 80 90">
+        <path d="M20 12 H60 V34 C60 50 48 58 40 58 C32 58 20 50 20 34 Z" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M20 18 H12 C12 32 18 36 26 36" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M60 18 H68 C68 32 62 36 54 36" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M40 58 V70 M28 70 H52 M32 76 H48" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      </svg>
+    </div>
+    <div class="scene scene-elci" data-scene="elci">
+      <div class="band"></div>
+    </div>
+    <div class="scene scene-projeler" data-scene="projeler">
+      <svg class="deco route" viewBox="0 0 200 320">
+        <path d="M40 300 C70 240 30 210 60 160 C90 110 40 90 80 30" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 6"/>
+        <circle cx="80" cy="30" r="3" fill="currentColor"/>
+        <circle cx="150" cy="70" r="1.4" fill="currentColor"/>
+        <circle cx="120" cy="140" r="1.2" fill="currentColor"/>
+        <circle cx="170" cy="200" r="1.6" fill="currentColor"/>
+      </svg>
+    </div>
+  </div>
+  <div class="veil" aria-hidden="true"></div>
+  <svg class="grain" aria-hidden="true">
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/>
+    </filter>
+    <rect width="100%" height="100%" filter="url(#grain)"/>
+  </svg>
+  <header id="top"></header>
+  <main id="view"></main>
+  <div id="overlays"></div>
+  <noscript>
+    <p class="noscript">Kuzey Akıncı. Bu sayfa için JavaScript gerekir.</p>
+  </noscript>
+  <script src="profile.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
