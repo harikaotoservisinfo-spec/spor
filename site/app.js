@@ -848,7 +848,8 @@ function richText(value) {
 
 function route() {
   const raw = decodeURIComponent(location.hash.replace(/^#/, ""));
-  const id = raw === "kupalar" ? "istatistikler" : raw;
+  let id = raw === "kupalar" ? "istatistikler" : raw;
+  if (id === "galeri") id = "projeler";
   return CHAPTERS.some((chapter) => chapter.id === id) ? id : "home";
 }
 
