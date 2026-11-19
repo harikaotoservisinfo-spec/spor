@@ -978,6 +978,155 @@ body.is-home.scene-kisi .hint { opacity: 1; }
   margin-bottom: 1.25rem;
 }
 
+.stats-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.stats-section-title {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
+.stats-tabs {
+  display: inline-flex;
+  gap: 0.35rem;
+  padding: 0.2rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  background: color-mix(in srgb, var(--sheet) 50%, transparent);
+}
+
+.stats-tab {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stats-tab.is-active {
+  color: var(--ice);
+  background: color-mix(in srgb, var(--ice) 14%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ice) 35%, transparent);
+}
+
+.stats-charts-stack {
+  margin-top: 0.35rem;
+}
+
+.chart-card {
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, var(--sheet) 72%, transparent);
+  padding: 1rem 1rem 1.1rem;
+}
+
+.chart-card-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  opacity: 0.88;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.1rem;
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+.chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.chart-swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.chart-swatch-xg {
+  background: color-mix(in srgb, var(--lime) 85%, white);
+}
+
+.chart-swatch-goals {
+  background: var(--ice);
+  border-radius: 50%;
+}
+
+.chart-scroll {
+  overflow-x: auto;
+  margin: 0 -0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.stats-chart {
+  display: block;
+  min-width: 36rem;
+  width: 100%;
+  height: auto;
+}
+
+.chart-grid {
+  stroke: color-mix(in srgb, currentColor 10%, transparent);
+  stroke-width: 1;
+}
+
+.chart-axis-line {
+  stroke: color-mix(in srgb, currentColor 22%, transparent);
+  stroke-width: 1;
+}
+
+.chart-axis {
+  font-size: 9px;
+  fill: var(--muted);
+  font-family: var(--sans);
+}
+
+.chart-bar-xg {
+  fill: color-mix(in srgb, var(--lime) 78%, #1a2818);
+}
+
+.chart-dot-goals {
+  fill: var(--ice);
+  stroke: color-mix(in srgb, var(--bg) 40%, transparent);
+  stroke-width: 1;
+}
+
+.chart-label-season {
+  font-size: 9px;
+  fill: var(--ink);
+  font-weight: 600;
+  font-family: var(--sans);
+}
+
+.chart-label-league {
+  font-size: 8px;
+  fill: var(--muted);
+  font-family: var(--sans);
+}
+
+.stats-jump a + a {
+  margin-left: 0.65rem;
+}
+
 .stats-source-head {
   display: flex;
   flex-wrap: wrap;

@@ -1552,6 +1552,123 @@ function tffSeasonCardBody(person, season) {
     ${tffUrl ? `<p class="match-note season-source-link"><a href="${esc(tffUrl)}" target="_blank" rel="noopener noreferrer">TFF oyuncu profili</a></p>` : ""}`;
 }
 
+function seasonMetricsSeries(person) {
+  const items = buildSeasonCardItems(person);
+  const askf = person.askf || {};
+  return items
+    .map((item) => {
+      let xg = 0;
+      let goals = 0;
+      let played = 0;
+      let label;
+      let league;
+      if (item.kind === "tff") {
+        const agg = playingTimeAggregate(person.matches, item.tffSeason.id, person);
+        xg = agg.xg;
+        goals = agg.goals;
+        played = numMatch(item.tffSeason.played);
+        label = item.seasonDisplay;
+        league = item.competition;
+      } else {
+        const { season, competition } = parseCareerLeague(item.askfRow.league);
+        const matches = askfLeagueMatches(askf, season, competition);
+        const leagueGoals = askfLeagueGoals(askf, season, competition);
+        const agg = askfPlayingTimeAggregate(matches, leagueGoals.length, person);
+        xg = agg.xg;
+        goals = agg.goals;
+        played = numMatch(item.askfRow.played);
+        label = season;
+        league = competition;
+      }
+      return {
+        sortSeason: item.sortSeason,
+        sortComp: item.competition,
+        label,
+        league,
+        xg,
+        goals,
+        played,
+        kind: item.kind
+      };
+    })
+    .sort((a, b) => {
+      const bySeason = a.sortSeason.localeCompare(b.sortSeason, "tr");
+      return bySeason !== 0 ? bySeason : a.sortComp.localeCompare(b.sortComp, "tr");
+    });
+}
+
+function shortLeagueLabel(league, max = 22) {
+  const t = String(league || "").trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 1)}…`;
+}
+
+function xgTrendChartHTML(series) {
+  if (!series.length) return `<p class="empty">Grafik için sezon verisi yok.</p>`;
+  const maxVal = Math.max(...series.map((d) => Math.max(d.xg, d.goals)), 0.3);
+  const cap = Math.ceil(maxVal * 1.2 * 10) / 10;
+  const w = 720;
+  const h = 260;
+  const padL = 42;
+  const padR = 16;
+  const padT = 20;
+  const padB = 88;
+  const innerW = w - padL - padR;
+  const innerH = h - padT - padB;
+  const slot = innerW / series.length;
+  const barW = Math.min(28, slot * 0.55);
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map((t) => {
+    const y = padT + innerH * (1 - t);
+    const val = (cap * t).toFixed(1);
+    return `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" class="chart-grid"/>
+      <text x="${padL - 8}" y="${y + 4}" class="chart-axis" text-anchor="end">${val}</text>`;
+  }).join("");
+  const bars = series
+    .map((d, i) => {
+      const cx = padL + slot * i + slot / 2;
+      const xgH = (d.xg / cap) * innerH;
+      const goalH = (d.goals / cap) * innerH;
+      const x = cx - barW / 2;
+      const yXg = padT + innerH - xgH;
+      const yGoal = padT + innerH - goalH;
+      const seasonLabel = esc(d.label.replace(/–/g, "-"));
+      const leagueLabel = esc(shortLeagueLabel(d.league, 18));
+      const title = `${d.label} · ${d.league}: xG ${d.xg.toFixed(2)}, gol ${d.goals}`;
+      return `<g class="chart-bar-group" role="img" aria-label="${esc(title)}">
+        <rect class="chart-bar chart-bar-xg" x="${x}" y="${yXg}" width="${barW}" height="${Math.max(xgH, 0.5)}" rx="3">
+          <title>${esc(title)}</title>
+        </rect>
+        <circle class="chart-dot-goals" cx="${cx}" cy="${yGoal}" r="4.5"><title>${esc(title)}</title></circle>
+        <text x="${cx}" y="${h - padB + 14}" class="chart-label-season" text-anchor="middle">${seasonLabel}</text>
+        <text x="${cx}" y="${h - padB + 28}" class="chart-label-league" text-anchor="middle">${leagueLabel}</text>
+      </g>`;
+    })
+    .join("");
+  const legend = `<div class="chart-legend" aria-hidden="true">
+      <span class="chart-legend-item"><span class="chart-swatch chart-swatch-xg"></span> Gol beklentisi (xG)</span>
+      <span class="chart-legend-item"><span class="chart-swatch chart-swatch-goals"></span> Attığı gol</span>
+    </div>`;
+  return `${legend}
+    <div class="chart-scroll" tabindex="0" aria-label="Sezonlara göre xG ve gol">
+      <svg class="stats-chart stats-chart-xg" viewBox="0 0 ${w} ${h}" role="img" aria-hidden="true">
+        ${gridLines}
+        <line x1="${padL}" y1="${padT + innerH}" x2="${w - padR}" y2="${padT + innerH}" class="chart-axis-line"/>
+        ${bars}
+      </svg>
+    </div>`;
+}
+
+function statsChartsPanelHTML(person) {
+  const series = seasonMetricsSeries(person);
+  return `<div class="stats-charts-stack" data-stats-panel="grafikler" id="stats-grafikler" hidden>
+    <article class="chart-card">
+      <h3 class="chart-card-title">Gol beklentisi — kronoloji</h3>
+      <p class="match-note season-inline-note">İlk sezondan bugüne, lig lig xG (süre + gol/90 modeli). Nokta: gerçek gol sayısı (aynı ölçek).</p>
+      ${xgTrendChartHTML(series)}
+    </article>
+  </div>`;
+}
+
 function seasonCardsHTML(person) {
   const items = buildSeasonCardItems(person);
   if (!items.length) return "";
@@ -1611,9 +1728,18 @@ function seasonCardsHTML(person) {
     </details>`;
   }).join("");
   return `<section class="group stats-panel" id="askf-sezonlar">
-    <h2>Sezonlar</h2>
-    <p class="match-note">Karta tıkla — ASKF ve TFF liglerinde maç, gol ve istatistikler açılır.</p>
-    <div class="season-card-stack">${cards}</div>
+    <div class="stats-section-head">
+      <h2 class="stats-section-title">İstatistik</h2>
+      <div class="stats-tabs" role="tablist" aria-label="Sezon ve grafik">
+        <button type="button" role="tab" class="stats-tab is-active" data-action="stats-tab" data-tab="sezonlar" aria-selected="true" aria-controls="stats-sezonlar-panel">Sezonlar</button>
+        <button type="button" role="tab" class="stats-tab" data-action="stats-tab" data-tab="grafikler" aria-selected="false" aria-controls="stats-grafikler">Grafikler</button>
+      </div>
+    </div>
+    <div data-stats-panel="sezonlar" id="stats-sezonlar-panel">
+      <p class="match-note">Karta tıkla — ASKF ve TFF liglerinde maç, gol ve istatistikler açılır.</p>
+      <div class="season-card-stack">${cards}</div>
+    </div>
+    ${statsChartsPanelHTML(person)}
   </section>`;
 }
 
@@ -1629,6 +1755,7 @@ function askfBlockHTML(person) {
     ${profileFactsStripHTML(person)}
     <nav class="stats-jump" aria-label="İstatistik bölümleri">
       <a href="#askf-sezonlar">Sezonlar</a>
+      <a href="#stats-grafikler" data-action="stats-tab-jump" data-tab="grafikler">Grafikler</a>
     </nav>
     ${seasonCardsHTML(person)}
   </section>`;
@@ -2037,8 +2164,26 @@ document.body.addEventListener("click", (event) => {
     editorOpen = false;
     renderPage();
     syncChrome();
+  } else if (action === "stats-tab" || action === "stats-tab-jump") {
+  switchStatsTab(target.dataset.tab || "sezonlar");
+  if (action === "stats-tab-jump") {
+    document.getElementById("askf-sezonlar")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   }
 });
+
+function switchStatsTab(tab) {
+  const root = document.getElementById("askf-sezonlar");
+  if (!root) return;
+  root.querySelectorAll("[data-stats-panel]").forEach((panel) => {
+    panel.hidden = panel.dataset.statsPanel !== tab;
+  });
+  root.querySelectorAll("[data-action='stats-tab']").forEach((btn) => {
+    const on = btn.dataset.tab === tab;
+    btn.classList.toggle("is-active", on);
+    btn.setAttribute("aria-selected", on ? "true" : "false");
+  });
+}
 
 document.body.addEventListener("submit", (event) => {
   if (event.target.id !== "profile-form") return;
